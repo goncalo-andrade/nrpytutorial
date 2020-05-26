@@ -3,3 +3,4 @@ out*.txt
 htmlcov/
 .coverage
 .vscode
+*Tutorial*.ipynb
