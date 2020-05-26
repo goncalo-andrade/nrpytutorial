@@ -12,21 +12,21 @@
  *    parity[9] = (sin(xx2)*sin(xx2_inbounds) + cos(xx2)*cos(xx2_inbounds))**2]"
  */
 {
-   const double tmp0 = cos(xx1)*cos(xx1_inbounds);
-   const double tmp1 = sin(xx1)*sin(xx1_inbounds);
-   const double tmp2 = sin(xx2)*sin(xx2_inbounds);
-   const double tmp3 = cos(xx2)*cos(xx2_inbounds);
-   const double tmp4 = tmp0 + tmp1*tmp2 + tmp1*tmp3;
-   const double tmp5 = tmp0*tmp2 + tmp0*tmp3 + tmp1;
-   const double tmp6 = tmp2 + tmp3;
+   const double tmp_0 = cos(xx1)*cos(xx1_inbounds);
+   const double tmp_1 = sin(xx1)*sin(xx1_inbounds);
+   const double tmp_2 = sin(xx2)*sin(xx2_inbounds);
+   const double tmp_3 = cos(xx2)*cos(xx2_inbounds);
+   const double tmp_4 = tmp_0 + tmp_1*tmp_2 + tmp_1*tmp_3;
+   const double tmp_5 = tmp_0*tmp_2 + tmp_0*tmp_3 + tmp_1;
+   const double tmp_6 = tmp_2 + tmp_3;
    parity[0] = 1;
-   parity[1] = tmp4;
-   parity[2] = tmp5;
-   parity[3] = tmp6;
-   parity[4] = ((tmp4)*(tmp4));
-   parity[5] = tmp4*tmp5;
-   parity[6] = tmp4*tmp6;
-   parity[7] = ((tmp5)*(tmp5));
-   parity[8] = tmp5*tmp6;
-   parity[9] = ((tmp6)*(tmp6));
+   parity[1] = tmp_4;
+   parity[2] = tmp_5;
+   parity[3] = tmp_6;
+   parity[4] = ((tmp_4)*(tmp_4));
+   parity[5] = tmp_4*tmp_5;
+   parity[6] = tmp_4*tmp_6;
+   parity[7] = ((tmp_5)*(tmp_5));
+   parity[8] = tmp_5*tmp_6;
+   parity[9] = ((tmp_6)*(tmp_6));
 }

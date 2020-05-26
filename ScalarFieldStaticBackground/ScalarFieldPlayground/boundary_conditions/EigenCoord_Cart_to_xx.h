@@ -5,8 +5,8 @@
  *    Cart_to_xx2_inbounds = atan2(Carty, Cartx)]"
  */
 {
-   const double tmp0 = sqrt(((Cartx)*(Cartx)) + ((Carty)*(Carty)) + ((Cartz)*(Cartz)));
-   Cart_to_xx0_inbounds = tmp0;
-   Cart_to_xx1_inbounds = acos(Cartz/tmp0);
+   const double tmp_0 = sqrt(((Cartx)*(Cartx)) + ((Carty)*(Carty)) + ((Cartz)*(Cartz)));
+   Cart_to_xx0_inbounds = tmp_0;
+   Cart_to_xx1_inbounds = acos(Cartz/tmp_0);
    Cart_to_xx2_inbounds = atan2(Carty, Cartx);
 }
