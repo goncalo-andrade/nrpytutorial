@@ -5,3 +5,4 @@ htmlcov/
 .vscode
 ScalarFieldStaticBackground/ScalarFieldPlayground/
 SommerfeldBC_Codes/
+.ipynb_checkpoints
