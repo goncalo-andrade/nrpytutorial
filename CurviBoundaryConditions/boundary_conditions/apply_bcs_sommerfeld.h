@@ -169,7 +169,7 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
         } // END for(int which_gz = 0; which_gz < NGHOSTS; which_gz++)
     } // END for(int which_gf=0;which_gf<NUM_GFS;which_gf++)
   }// END if coord = Cartesian  
- /* else {
+  else if (strstr(coord, "Spherical") != NULL){
     #pragma omp parallel for
         for(int which_gf=0;which_gf<NUM_GFS;which_gf++) {
           REAL var_at_infinity = evolgf_at_inf[which_gf];
@@ -229,7 +229,7 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
             }// END for(int pt=0;pt<num_ib_gz_pts[which_gz];pt++)
         } // END for(int which_gz = 0; which_gz < NGHOSTS; which_gz++)
     } // END for(int which_gf=0;which_gf<NUM_GFS;which_gf++)
-  }*/ else {
+  } else {
     printf("ERROR: Sommerfeld boundary conditions are currently only enabled for Cartesian coordinates.\n");
     exit(1);
   } // END coord != Cartesian

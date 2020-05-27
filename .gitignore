@@ -3,5 +3,5 @@ out*.txt
 htmlcov/
 .coverage
 .vscode
-*Tutorial*.ipynb
 ScalarFieldStaticBackground/ScalarFieldPlayground/
+SommerfeldBC_Codes/
