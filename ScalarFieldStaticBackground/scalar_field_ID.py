@@ -139,7 +139,7 @@ def scalar_field_test_ID():
     Pi_t = sp.diff(Phi_t, t)
     for i in range(DIM):
         Pi_t -= betaU[i] * sp.diff(Phi_t, coords[i])
-    Pi = sp.simplify(1/alpha * Pi_t.subs(t, sp.sympify(0)))
+    Pi = sp.simplify(-1/alpha * Pi_t.subs(t, sp.sympify(0)))
 
     # This function replaces the spherical coordinates r, th, ph for the numerical grid xx0, xx1, xx2
     # Taken from BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear.py
