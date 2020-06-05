@@ -1,5 +1,5 @@
 CXX = gcc
-FLAGS = -ggdb -O3 -fopenmp
+FLAGS = -ggdb -fopenmp
 POSTFLAGS = -lm
 
 sommerfeld:
