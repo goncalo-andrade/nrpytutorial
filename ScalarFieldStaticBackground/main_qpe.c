@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <fenv.h> // Used to enable floating point exceptions
 
 // Declare important global quantities and macros
 
@@ -59,6 +60,9 @@
 
 int main(int argc, const char *argv[])
 {
+
+    // Enable floating point exceptions
+    // feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
     // Define parameter struct
     paramstruct params;
@@ -211,7 +215,7 @@ int main(int argc, const char *argv[])
     // Time parameters
 
     // Set final time so that the approximate outer BCs don't contaminate the data at the origin
-    const REAL t_final = t_initial + 500.0;
+    const REAL t_final = t_initial + 100.0;
 
     // Timestep based on the CFL condition
     REAL dt = find_timestep(&params, xx);
@@ -220,7 +224,7 @@ int main(int argc, const char *argv[])
     int N_final = (int)((t_final - t_initial) / dt + 0.5); // Add 0.5 to account for C rounding down
 
     // Number of iterations before outputting data
-    int output_every_N = (int)((REAL)N_final / 100.0);
+    int output_every_N = (int)((REAL)N_final / 200.0);
     if (output_every_N == 0)
         output_every_N = 1;
 
@@ -270,7 +274,7 @@ int main(int argc, const char *argv[])
 
             // File to print scalar field and derivative
             char filename_num_all[100];
-            sprintf(filename_num_all, "fields_num_all_%d_%d_%d_%.2f.txt", Nxx[0], Nxx[1], Nxx[2], current_t);
+            sprintf(filename_num_all, "fields_num_all_%d_%d_%d_%.5f.txt", Nxx[0], Nxx[1], Nxx[2], current_t);
             FILE *out_num_all = fopen(filename_num_all, "w");
 
             LOOP_REGION(NGHOSTS, Nxx_plus_2NGHOSTS0 - NGHOSTS,
@@ -299,7 +303,7 @@ int main(int argc, const char *argv[])
 
             // File to print scalar field and derivative
             char filename_num_all[100];
-            sprintf(filename_num_all, "fields_num_all_%d_%d_%d_%.2f.txt", Nxx[0], Nxx[1], Nxx[2], current_t);
+            sprintf(filename_num_all, "fields_num_all_%d_%d_%d_%.5f.txt", Nxx[0], Nxx[1], Nxx[2], current_t);
             FILE *out_num_all = fopen(filename_num_all, "w");
 
             LOOP_REGION(NGHOSTS, Nxx_plus_2NGHOSTS0 - NGHOSTS,
