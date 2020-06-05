@@ -11,3 +11,7 @@ qpe:
 clean:
 	rm -r output/*
 	mkdir output/err output/out
+
+update: ../main_sommerfeld.c ../main_qpe.c
+	cp ../main_sommerfeld.c .
+	cp ../main_qpe.c .
