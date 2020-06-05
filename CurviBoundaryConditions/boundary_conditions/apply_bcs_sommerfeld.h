@@ -11,6 +11,8 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
                           const int8_t *restrict gfs_parity, REAL *restrict gfs,
                           REAL *restrict rhs_gfs) {
 
+#include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
+                                          * accounting for the relative path */   
   if (strcmp(coord, "Cartesian") == 0){
     #pragma omp parallel for
         for(int which_gf=0;which_gf<NUM_GFS;which_gf++) {
@@ -18,8 +20,6 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
           REAL radpower = evolgf_radpower[which_gf];
           REAL char_speed = evolgf_speed[which_gf];
             
-        #include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
-                                                 * accounting for the relative path */   
             for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
                 for(int pt=0;pt<bcstruct->num_ob_gz_pts[which_gz];pt++) {                
                     int i0 = bcstruct->outer[which_gz][pt].outer_bc_dest_pt.i0;
