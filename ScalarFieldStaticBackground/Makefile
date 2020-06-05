@@ -1,8 +1,12 @@
+CXX = gcc
+FLAGS = -ggdb -O3 -fopenmp
+POSTFLAGS = -lm
+
 sommerfeld:
-	gcc -O3 -fopenmp main_sommerfeld.c -o output/exec -lm
+	${CXX} ${FLAGS} main_sommerfeld.c -o output/exec ${POSTFLAGS}
 
 qpe:
-	gcc -O3 -fopenmp main_qpe.c -o output/exec -lm
+	${CXX} ${FLAGS} main_qpe.c -o output/exec ${POSTFLAGS}
 
 clean:
 	rm -r output/*
