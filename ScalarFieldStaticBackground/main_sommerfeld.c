@@ -211,7 +211,7 @@ int main(int argc, const char *argv[])
     // Time parameters
 
     // Set final time so that the approximate outer BCs don't contaminate the data at the origin
-    const REAL t_final = t_initial + 500.0;
+    const REAL t_final = t_initial + 50;
 
     // Timestep based on the CFL condition
     REAL dt = find_timestep(&params, xx);
@@ -241,6 +241,10 @@ int main(int argc, const char *argv[])
     // Set up initial data
     initial_data(&params, xx, y_n_gfs);
 
+    // Apply Sommerfeld BCs to correctly define the values at inner boundaries
+    // k_odd_gfs is just a placeholder, we don't care about RHSs at this point
+    apply_bcs_sommerfeld(&params, xx, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, y_n_gfs, k_odd_gfs); 
+
     // We don't apply boundary conditions to the initial data
     // Because Sommerfeld BCs are applied within the RK evolution
 
@@ -248,11 +252,13 @@ int main(int argc, const char *argv[])
 
 // Start timer to keep track of simulation times
 #ifdef __linux__ // Use high-precision timer in Linux.
-    struct timespec start, end;
+        struct timespec start,
+        end;
     clock_gettime(CLOCK_REALTIME, &start);
 #else // Resort to low-resolution, standards-compliant timer in non-Linux OSs
-    // http://www.cplusplus.com/reference/ctime/time/
-    time_t start_timer, end_timer;
+        // http://www.cplusplus.com/reference/ctime/time/
+        time_t start_timer,
+        end_timer;
     time(&start_timer);                                                   // Resolution of one second...
 #endif
 
@@ -269,7 +275,7 @@ int main(int argc, const char *argv[])
 
             // File to print scalar field and derivative
             char filename_num_all[100];
-            sprintf(filename_num_all, "fields_num_all_%d_%d_%d_%.2f.txt", Nxx[0], Nxx[1], Nxx[2], current_t);
+            sprintf(filename_num_all, "fields_num_all_%d_%d_%d_%.5f.txt", Nxx[0], Nxx[1], Nxx[2], current_t);
             FILE *out_num_all = fopen(filename_num_all, "w");
 
             LOOP_REGION(NGHOSTS, Nxx_plus_2NGHOSTS0 - NGHOSTS,
@@ -298,7 +304,7 @@ int main(int argc, const char *argv[])
 
             // File to print scalar field and derivative
             char filename_num_all[100];
-            sprintf(filename_num_all, "fields_num_all_%d_%d_%d_%.2f.txt", Nxx[0], Nxx[1], Nxx[2], current_t);
+            sprintf(filename_num_all, "fields_num_all_%d_%d_%d_%.5f.txt", Nxx[0], Nxx[1], Nxx[2], current_t);
             FILE *out_num_all = fopen(filename_num_all, "w");
 
             LOOP_REGION(NGHOSTS, Nxx_plus_2NGHOSTS0 - NGHOSTS,
