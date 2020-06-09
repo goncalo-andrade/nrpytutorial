@@ -168,9 +168,10 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
             }// END for(int pt=0;pt<num_ib_gz_pts[which_gz];pt++)
         } // END for(int which_gz = 0; which_gz < NGHOSTS; which_gz++)
     } // END for(int which_gf=0;which_gf<NUM_GFS;which_gf++)
-  }// END if coord = Cartesian  
-  else if (strstr(coord, "Spherical") != NULL){
-    #pragma omp parallel for
+  }// END if coord = Cartesian
+  else if (strcmp(coord, "Spherical") == 0)
+  {
+#pragma omp parallel for
         for(int which_gf=0;which_gf<NUM_GFS;which_gf++) {
           REAL var_at_infinity = evolgf_at_inf[which_gf];
           REAL radpower = evolgf_radpower[which_gf];
@@ -188,10 +189,16 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
                     REAL invr = 1./(xx[0][i0]);
                     REAL dfdr = 0.;
 
+                    // Forwards finite difference stencil - wrong
                     // On a +x or -x face, do up/down winding as appropriate:
-                    dfdr = (-3*gfs[IDX4S(which_gf,i0,  i1,i2)]
-                            +4*gfs[IDX4S(which_gf,i0+1,i1,i2)]
-                            -1*gfs[IDX4S(which_gf,i0+2,i1,i2)])*invdx0*0.5;
+                    // dfdr = (-3*gfs[IDX4S(which_gf,i0,  i1,i2)]
+                    //         +4*gfs[IDX4S(which_gf,i0+1,i1,i2)]
+                    //         -1*gfs[IDX4S(which_gf,i0+2,i1,i2)])*invdx0*0.5;
+
+                    // Backwards finite difference stencil
+                    dfdr = (3 * gfs[IDX4S(which_gf, i0, i1, i2)] 
+                            - 4 * gfs[IDX4S(which_gf, i0 + 1, i1, i2)] 
+                            + 1 * gfs[IDX4S(which_gf, i0 + 2, i1, i2)]) * invdx0 * 0.5;
 
                     REAL source_rhs = -char_speed*(dfdr + invr*(gfs[IDX4S(which_gf,i0,i1,i2)] - var_at_infinity));
                     rhs_gfs[IDX4S(which_gf,i0,i1,i2)] = source_rhs;
@@ -199,19 +206,47 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
                      /////////For radial falloff and the extrapolated h'(t) term////////   
                     if (radpower > 0) {
 
-                      int ip0 = i0+1;
+                      // This seems wrong for the following reasons:
+                      // 1. ip0 = i0+1 moves AWAY from the interior points, not towards them
+                      // 2. dfdr is taken as a forwards finite difference stencil, should be backwards
+                      //    otherwise it'll try to access elements of an array that don't exist
+                      // Proposed solution below by Gonçalo Andrade
+
+                      // int ip0 = i0+1;
                       
+                      // REAL invrp = 1./(xx[0][ip0]);
+                      // REAL dfdr = 0.;
+
+                      // dfdr = (-3*gfs[IDX4S(which_gf,ip0  ,i1,i2)]
+                      //         +4*gfs[IDX4S(which_gf,ip0+1,i1,i2)]
+                      //         -1*gfs[IDX4S(which_gf,ip0+2,i1,i2)])*invdx0*0.5;
+
+                      
+                      // REAL extrap_rhs = char_speed*(dfdr + invrp*(gfs[IDX4S(which_gf,ip0,i1,i2)] - var_at_infinity));
+                      // REAL aux = rhs_gfs[IDX4S(which_gf,ip0,i1,i2)] + extrap_rhs;
+                      // rhs_gfs[IDX4S(which_gf,i0,i1,i2)] += aux*pow(xx[0][ip0]*invr,radpower);
+
+                      // Proposed solution
+
+                      int ip0 = i0 - 1;   // Move towards the interior of the grid
+
                       REAL invrp = 1./(xx[0][ip0]);
                       REAL dfdr = 0.;
 
-                      dfdr = (-3*gfs[IDX4S(which_gf,ip0  ,i1,i2)]
-                              +4*gfs[IDX4S(which_gf,ip0+1,i1,i2)]
-                              -1*gfs[IDX4S(which_gf,ip0+2,i1,i2)])*invdx0*0.5;
+                      if (ip0 + NGHOSTS >= Nxx_plus_2NGHOSTS2) {
+                        // Backwards derivative - notice the sign change
+                        dfdr = (3 * gfs[IDX4S(which_gf, ip0, i1, i2)] 
+                                - 4 * gfs[IDX4S(which_gf, ip0 - 1, i1, i2)] 
+                                + 1 * gfs[IDX4S(which_gf, ip0 - 2, i1, i2)]) * invdx0 * 0.5;
+                      } else {
+                        // Standard centered derivative
+                        dfdr = (gfs[IDX4S(which_gf, ip0, ip0 + 1, ip2)] - gfs[IDX4S(which_gf, ip0, ip0 - 1, ip2)]) * invrp * 0.5;
+                      }
 
-                      
-                      REAL extrap_rhs = char_speed*(dfdr + invrp*(gfs[IDX4S(which_gf,ip0,i1,i2)] - var_at_infinity));
-                      REAL aux = rhs_gfs[IDX4S(which_gf,ip0,i1,i2)] + extrap_rhs;
-                      rhs_gfs[IDX4S(which_gf,i0,i1,i2)] += aux*pow(xx[0][ip0]*invr,radpower);
+                      // Same as above
+                      REAL extrap_rhs = char_speed * (dfdr + invrp * (gfs[IDX4S(which_gf, ip0, i1, i2)] - var_at_infinity));
+                      REAL aux = rhs_gfs[IDX4S(which_gf, ip0, i1, i2)] + extrap_rhs;
+                      rhs_gfs[IDX4S(which_gf, i0, i1, i2)] += aux * pow(xx[0][ip0] * invr, radpower);
                     }
                 }// END for(int pt=0;pt<num_ob_gz_pts[which_gz];pt++)
                 // Then apply INNER (parity) boundary conditions:
@@ -229,7 +264,9 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
             }// END for(int pt=0;pt<num_ib_gz_pts[which_gz];pt++)
         } // END for(int which_gz = 0; which_gz < NGHOSTS; which_gz++)
     } // END for(int which_gf=0;which_gf<NUM_GFS;which_gf++)
-  } else {
+  }
+  else
+  {
     printf("ERROR: Sommerfeld boundary conditions are currently only enabled for Cartesian coordinates.\n");
     exit(1);
   } // END coord != Cartesian
