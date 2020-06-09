@@ -63,7 +63,7 @@ int main(int argc, const char *argv[])
 
     // Enable floating point exceptions
     // feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
-    feenableexcept(FE_OVERFLOW);
+    feenableexcept(FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID);
 
     // Define parameter struct
     paramstruct params;
@@ -216,7 +216,7 @@ int main(int argc, const char *argv[])
     // Time parameters
 
     // Set final time so that the approximate outer BCs don't contaminate the data at the origin
-    const REAL t_final = t_initial + 200;
+    const REAL t_final = t_initial + 100;
 
     // Timestep based on the CFL condition
     REAL dt = find_timestep(&params, xx);
