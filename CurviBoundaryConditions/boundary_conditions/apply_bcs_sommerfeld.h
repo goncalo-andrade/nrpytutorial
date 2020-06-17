@@ -224,7 +224,7 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params, REAL *restrict xx[
           //         -1*gfs[IDX4S(which_gf,i0+2,i1,i2)])*invdx0*0.5;
 
           // Backwards finite difference stencil
-          dfdr = (3 * gfs[IDX4S(which_gf, i0, i1, i2)] - 4 * gfs[IDX4S(which_gf, i0 + 1, i1, i2)] + 1 * gfs[IDX4S(which_gf, i0 + 2, i1, i2)]) * invdx0 * 0.5;
+          dfdr = (3 * gfs[IDX4S(which_gf, i0, i1, i2)] - 4 * gfs[IDX4S(which_gf, i0 - 1, i1, i2)] + 1 * gfs[IDX4S(which_gf, i0 - 2, i1, i2)]) * invdx0 * 0.5;
 
           REAL source_rhs = -char_speed * (dfdr + invr * (gfs[IDX4S(which_gf, i0, i1, i2)] - var_at_infinity));
           rhs_gfs[IDX4S(which_gf, i0, i1, i2)] = source_rhs;
@@ -261,6 +261,7 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params, REAL *restrict xx[
             REAL invrp = 1. / (xx[0][ip0]);
             REAL dfdr = 0.;
 
+            // Use centered finite difference stencils if possible, otherwise use backwards derivatives
             if (ip0 + NGHOSTS >= Nxx_plus_2NGHOSTS2)
             {
               // Backwards derivative - notice the sign change
@@ -272,7 +273,7 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params, REAL *restrict xx[
               dfdr = (gfs[IDX4S(which_gf, ip0 + 1, i1, i2)] - gfs[IDX4S(which_gf, ip0 - 1, i1, i2)]) * invrp * 0.5;
             }
 
-            // Same as above
+            // Same as before
             REAL extrap_rhs = char_speed * (dfdr + invrp * (gfs[IDX4S(which_gf, ip0, i1, i2)] - var_at_infinity));
             REAL aux = rhs_gfs[IDX4S(which_gf, ip0, i1, i2)] + extrap_rhs;
             rhs_gfs[IDX4S(which_gf, i0, i1, i2)] += aux * pow(xx[0][ip0] * invr, radpower);
