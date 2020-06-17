@@ -58,6 +58,43 @@
 //#include "SIMD/SIMD_intrinsics.h"
 #include "rhs_eval.h"
 
+void print_ghost_rhs(const paramstruct *restrict params, REAL *restrict xx[3], const bc_struct *restrict bcstruct, REAL *restrict rhs_gfs, FILE *out) {
+
+#include "set_Cparameters.h"
+
+    for (int which_gz = 0; which_gz < NGHOSTS; ++which_gz) {
+
+        for (int pt = 0; pt < bcstruct->num_ob_gz_pts[which_gz]; ++pt) {
+
+            int i0 = bcstruct->outer[which_gz][pt].outer_bc_dest_pt.i0;
+            int i1 = bcstruct->outer[which_gz][pt].outer_bc_dest_pt.i1;
+            int i2 = bcstruct->outer[which_gz][pt].outer_bc_dest_pt.i2;
+
+            const int idx = IDX3S(i0, i1, i2);
+            fprintf(out, "%d %e %e %e %e %e\n", which_gz, xx[0][i0], xx[1][i1], xx[2][i2], rhs_gfs[IDX4ptS(PHIGF, idx)], rhs_gfs[IDX4ptS(PIGF, idx)]);
+        } // END LOOP for (int pt = 0; pt < bcstruct->num_ob_gz_pts[which_gz]; ++pt)
+    }     // END LOOP for (int which_gz = 0; which_gz < NGHOSTS; ++which_gz)
+}         // END FUNCTION print_ghost_rhs
+
+// void print_ghost_rhs(const paramstruct *restrict params, REAL *restrict xx[3], REAL *restrict rhs_gfs, FILE *out)
+// {
+
+// #include "set_Cparameters.h"
+
+//     int init_i0 = Nxx_plus_2NGHOSTS0 - NGHOSTS - 1;
+
+//     for (int i0 = init_i0; i0 < Nxx_plus_2NGHOSTS0; ++i0) {
+//         for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; ++i1) {
+//             for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; ++i2) {
+
+//                 const int idx = IDX3S(i0, i1, i2);
+//                 fprintf(out, "%e %e %e %e %e\n ", xx[0][i0], xx[1][i1], xx[2][i2], rhs_gfs[IDX4ptS(PHIGF, idx)], rhs_gfs[IDX4ptS(PIGF, idx)]);
+
+//             }   // END LOOP for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; ++i2)
+//         }       // END LOOP for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; ++i1)
+//     }           // END LOOP for (int i0 = init_i0; i0 < Nxx_plus_2NGHOSTS0; ++i0)
+// }               // END FUNCTION
+
 int main(int argc, const char *argv[])
 {
 
@@ -216,7 +253,7 @@ int main(int argc, const char *argv[])
     // Time parameters
 
     // Set final time so that the approximate outer BCs don't contaminate the data at the origin
-    const REAL t_final = t_initial + 100;
+    const REAL t_final = t_initial + 300.0;
 
     // Timestep based on the CFL condition
     REAL dt = find_timestep(&params, xx);
@@ -225,7 +262,7 @@ int main(int argc, const char *argv[])
     int N_final = (int)((t_final - t_initial) / dt + 0.5); // Add 0.5 to account for C rounding down
 
     // Number of iterations before outputting data
-    int output_every_N = (int)((REAL)N_final / 100.0);
+    int output_every_N = (int)((REAL)N_final / 300.0);
     if (output_every_N == 0)
         output_every_N = 1;
 
@@ -248,7 +285,7 @@ int main(int argc, const char *argv[])
 
     // Apply Sommerfeld BCs to correctly define the values at inner boundaries
     // k_odd_gfs is just a placeholder, we don't care about RHSs at this point
-    apply_bcs_sommerfeld(&params, xx, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, y_n_gfs, k_odd_gfs); 
+    // apply_bcs_sommerfeld(&params, xx, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, y_n_gfs, k_odd_gfs); 
 
     // We don't apply boundary conditions to the initial data
     // Because Sommerfeld BCs are applied within the RK evolution

@@ -1,12 +1,17 @@
 CXX = gcc
-FLAGS = -ggdb -fopenmp
+DEGUB_FLAGS = -ggdb
+OPTIMIZE_FLAGS = -O3
+OMP_FLAG = -fopenmp
 POSTFLAGS = -lm
 
 sommerfeld:
-	${CXX} ${FLAGS} main_sommerfeld.c -o output/exec ${POSTFLAGS}
+	${CXX} ${OPTIMIZE_FLAGS} ${OMP_FLAG} main_sommerfeld.c -o output/exec ${POSTFLAGS}
 
 qpe:
-	${CXX} ${FLAGS} main_qpe.c -o output/exec ${POSTFLAGS}
+	${CXX} ${OPTIMIZE_FLAGS} ${OMP_FLAG} main_qpe.c -o output/exec ${POSTFLAGS}
+
+debug:
+	${CXX} ${DEGUB_FLAGS} ${OMP_FLAG} main_sommerfeld.c -o output/exec ${POSTFLAGS}
 
 clean:
 	rm -r output/*
