@@ -217,12 +217,6 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params, REAL *restrict xx[
           REAL invr = 1. / (xx[0][i0]);
           REAL dfdr = 0.;
 
-          // Forwards finite difference stencil - wrong
-          // On a +x or -x face, do up/down winding as appropriate:
-          // dfdr = (-3*gfs[IDX4S(which_gf,i0,  i1,i2)]
-          //         +4*gfs[IDX4S(which_gf,i0+1,i1,i2)]
-          //         -1*gfs[IDX4S(which_gf,i0+2,i1,i2)])*invdx0*0.5;
-
           // Backwards finite difference stencil
           dfdr = (3 * gfs[IDX4S(which_gf, i0, i1, i2)] - 4 * gfs[IDX4S(which_gf, i0 - 1, i1, i2)] + 1 * gfs[IDX4S(which_gf, i0 - 2, i1, i2)]) * invdx0 * 0.5;
 
@@ -232,29 +226,6 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params, REAL *restrict xx[
           /////////For radial falloff and the extrapolated h'(t) term////////
           if (radpower > 0)
           {
-
-            // This seems wrong for the following reasons:
-            // 1. ip0 = i0+1 moves AWAY from the interior points, not towards them
-            // 2. dfdr is taken as a forwards finite difference stencil, should be backwards
-            //    otherwise it'll try to access elements of an array that don't exist
-            // Proposed solution below by Gonçalo Andrade
-
-            // int ip0 = i0 + 1;
-
-            // REAL invrp = 1. / (xx[0][ip0]);
-            // REAL dfdr = 0.;
-
-            // // Forwards derivative stencil
-            // dfdr = (-3 * gfs[IDX4S(which_gf, ip0, i1, i2)] + 4 * gfs[IDX4S(which_gf, ip0 + 1, i1, i2)] - 1 * gfs[IDX4S(which_gf, ip0 + 2, i1, i2)]) * invdx0 * 0.5;
-
-            // // Backwards derivative stencil
-            // dfdr = (3 * gfs[IDX4S(which_gf, ip0, i1, i2)] - 4 * gfs[IDX4S(which_gf, ip0 - 1, i1, i2)] + 1 * gfs[IDX4S(which_gf, ip0 - 2, i1, i2)]) * invdx0 * 0.5;
-
-            // REAL extrap_rhs = char_speed * (dfdr + invrp * (gfs[IDX4S(which_gf, ip0, i1, i2)] - var_at_infinity));
-            // REAL aux = rhs_gfs[IDX4S(which_gf, ip0, i1, i2)] + extrap_rhs;
-            // rhs_gfs[IDX4S(which_gf, i0, i1, i2)] += aux * pow(xx[0][ip0] * invr, radpower);
-
-            // Proposed solution
 
             int ip0 = i0 - 1; // Move towards the interior of the grid
 
