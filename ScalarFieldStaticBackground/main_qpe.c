@@ -57,6 +57,7 @@
 #include "initial_data.h"
 //#include "SIMD/SIMD_intrinsics.h"
 #include "rhs_eval.h"
+#include "print_ghosts.h"
 
 int main(int argc, const char *argv[])
 {
@@ -215,7 +216,7 @@ int main(int argc, const char *argv[])
     // Time parameters
 
     // Set final time so that the approximate outer BCs don't contaminate the data at the origin
-    const REAL t_final = t_initial + 300.0;
+    const REAL t_final = t_initial + 200.0;
 
     // Timestep based on the CFL condition
     REAL dt = find_timestep(&params, xx);
@@ -248,6 +249,7 @@ int main(int argc, const char *argv[])
     // Apply boundary conditions to the initial data
     // Sometimes initial data is ill-defined in ghost zones
     apply_bcs_curvilinear(&params, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, y_n_gfs);
+    #include "print_ghosts.h"
 
 /************************ START TIMER ************************/
 
@@ -289,6 +291,13 @@ int main(int argc, const char *argv[])
             }
 
             fclose(out_num_all);
+
+            // Print interior ghost points
+            char filename_ghosts[100];
+            sprintf(filename_ghosts, "inner_ghosts_%d_%d_%d_%.5f.txt", Nxx[0], Nxx[1], Nxx[2], current_t);
+            FILE *inner_ghosts_out = fopen(filename_ghosts, "w");
+            print_ib_ghosts(&params, xx, &bcstruct, y_n_gfs, inner_ghosts_out);
+            fclose(inner_ghosts_out);
         }
 
 // Step forward in time
@@ -318,6 +327,13 @@ int main(int argc, const char *argv[])
             }
 
             fclose(out_num_all);
+
+            // Print interior ghost points
+            char filename_ghosts[100];
+            sprintf(filename_ghosts, "inner_ghosts_%d_%d_%d_%.5f.txt", Nxx[0], Nxx[1], Nxx[2], current_t);
+            FILE *inner_ghosts_out = fopen(filename_ghosts, "w");
+            print_ib_ghosts(&params, xx, &bcstruct, y_n_gfs, inner_ghosts_out);
+            fclose(inner_ghosts_out);
         }
 
 // Print progress indicator
