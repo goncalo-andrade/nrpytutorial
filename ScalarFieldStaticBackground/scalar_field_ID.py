@@ -134,6 +134,8 @@ def scalar_field_test_ID():
     g = sp.Rational(1/2) * sp.exp(-(r - t + r0)**2 / w**2)
 
     Phi_t = 1/r * (f + g)
+    # TEMPORARY: MULTIPLY ORIGINAL EXPRESSION FOR PHI_T BY R
+    # Phi_t = f + g
     Phi = sp.simplify(Phi_t.subs(t, sp.sympify(0)))
 
     Pi_t = sp.diff(Phi_t, t)

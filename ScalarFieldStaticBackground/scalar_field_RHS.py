@@ -98,3 +98,28 @@ def field_RHSs():
     for i in range(DIM):
         # Shift advection derivatives are upwinded
         Pi_rhs += betaU[i] * Pi_dupD[i]
+
+    #################### TEMPORARY: MULTIPLY EXPRESSIONS BY R TO EVOLVE R*GF INSTEAD OF JUST GF ####################
+
+    # # Define the spherical coordinates
+    # r, th, ph = sp.symbols('r th ph', real=True)
+    # coords = [r, th, ph]
+
+    # # Multiply rhs expressions by r
+    # Phi_rhs *= r
+    # Pi_rhs *= r
+
+    # # This function replaces the spherical coordinates r, th, ph for the numerical grid xx0, xx1, xx2
+    # # Taken from BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear.py
+
+    # def sympify_integers__replace_rthph_or_Cartxyz(obj, rthph_or_xyz, rthph_or_xyz_of_xx):
+    #     if isinstance(obj, int):
+    #         return sp.sympify(obj)
+    #     else:
+    #         return obj.subs(rthph_or_xyz[0], rthph_or_xyz_of_xx[0]).\
+    #             subs(rthph_or_xyz[1], rthph_or_xyz_of_xx[1]).\
+    #             subs(rthph_or_xyz[2], rthph_or_xyz_of_xx[2])
+
+    # # Replace spherical coordinate symbols by numerical grid coordinates
+    # Phi_rhs = sp.simplify(sympify_integers__replace_rthph_or_Cartxyz(Phi_rhs, coords, rfm.xxSph))
+    # Pi_rhs = sp.simplify(sympify_integers__replace_rthph_or_Cartxyz(Pi_rhs, coords, rfm.xxSph))
