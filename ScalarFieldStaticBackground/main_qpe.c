@@ -216,7 +216,7 @@ int main(int argc, const char *argv[])
     // Time parameters
 
     // Set final time so that the approximate outer BCs don't contaminate the data at the origin
-    const REAL t_final = t_initial + 200.0;
+    const REAL t_final = t_initial + 1.0;
 
     // Timestep based on the CFL condition
     REAL dt = find_timestep(&params, xx);
@@ -225,7 +225,7 @@ int main(int argc, const char *argv[])
     int N_final = (int)((t_final - t_initial) / dt + 0.5); // Add 0.5 to account for C rounding down
 
     // Number of iterations before outputting data
-    int output_every_N = (int)((REAL)N_final / 200.0);
+    int output_every_N = (int)((REAL)N_final / 20.0);
     if (output_every_N == 0)
         output_every_N = 1;
 
