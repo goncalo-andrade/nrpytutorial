@@ -3,6 +3,6 @@ out*.txt
 htmlcov/
 .coverage
 .vscode
-ScalarFieldStaticBackground/ScalarFieldPlayground/
+ScalarFieldStaticBackground/*Playground/
 SommerfeldBC_Codes/
 .ipynb_checkpoints
