@@ -175,3 +175,57 @@ def scalar_field_test_ID():
     import ScalarFieldStaticBackground.scalar_field_ID_function_string as sfIDf
     global returnfunction
     returnfunction = sfIDf.scalar_field_ID_function_string(Phi, Pi)
+
+
+def scalar_field_plane_wave_ID(k0, k1, k2):
+
+    # Define global variables for the initial data
+    global Phi, Pi
+
+    # Set spatial dimension to 3
+    DIM = 3
+
+    # Call reference metric if it hasn't been called already
+    if not rfm.have_already_called_reference_metric_function:
+        rfm.reference_metric()
+
+    x, y, z = sp.symbols('x y z', real=True)
+    cart_coords = [x, y, z]
+    t = sp.symbols('t', real=True)
+
+    gmq.flat_metric_quantities()
+    alpha = gmq.alpha
+    betaU = gmq.betaU
+
+    k = [k0, k1, k2]
+    k_norm = sp.sqrt(k0**2 + k1**2 + k2**2)
+
+    dot_product = sp.sympify(0)
+    for i in range(DIM):
+        dot_product += k[i] * cart_coords[i]
+    dot_product /= k_norm
+
+    Phi_t = sp.sin(dot_product - t) + 2
+    Phi = Phi_t.subs(t, sp.sympify(0))
+
+    Pi_t = sp.diff(Phi_t, t)
+    for i in range(DIM):
+        Pi_t -= betaU[i] * sp.diff(Phi_t, cart_coords[i])
+    Pi = - 1/alpha * Pi_t.subs(t, sp.sympify(0))
+
+
+    def sympify_integers__replace_rthph_or_Cartxyz(obj, rthph_or_xyz, rthph_or_xyz_of_xx):
+        if isinstance(obj, int):
+            return sp.sympify(obj)
+        else:
+            return obj.subs(rthph_or_xyz[0], rthph_or_xyz_of_xx[0]).\
+                subs(rthph_or_xyz[1], rthph_or_xyz_of_xx[1]).\
+                subs(rthph_or_xyz[2], rthph_or_xyz_of_xx[2])
+
+    Phi = sympify_integers__replace_rthph_or_Cartxyz(Phi, cart_coords, rfm.xxCart)
+    Pi = sympify_integers__replace_rthph_or_Cartxyz(Pi, cart_coords, rfm.xxCart)
+
+    # Add initial data function to C functions dictionary
+    import ScalarFieldStaticBackground.scalar_field_ID_function_string as sfIDf
+    global returnfunction
+    returnfunction = sfIDf.scalar_field_ID_function_string(Phi, Pi)
