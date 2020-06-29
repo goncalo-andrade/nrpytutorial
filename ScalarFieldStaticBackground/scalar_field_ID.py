@@ -130,8 +130,8 @@ def scalar_field_test_ID():
     alpha = gmq.alpha
     betaU = gmq.betaU
 
-    f = sp.Rational(1/2) * sp.exp(-(r + t - r0)**2 / w**2)
-    g = sp.Rational(1/2) * sp.exp(-(r - t + r0)**2 / w**2)
+    f = sp.Rational(1/2) * sp.exp(-(r + t - r0)**2 / w**2)*(r+t)
+    g = sp.Rational(1/2) * sp.exp(-(r - t + r0)**2 / w**2)*(r-t)
 
     Phi_t = 1/r * (f + g)
     # TEMPORARY: MULTIPLY ORIGINAL EXPRESSION FOR PHI_T BY R
