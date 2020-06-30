@@ -251,18 +251,18 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params, REAL *restrict xx[
           }
         } // END for(int pt=0;pt<num_ob_gz_pts[which_gz];pt++)
           // Then apply INNER (parity) boundary conditions:
-        for (int pt = 0; pt < bcstruct->num_ib_gz_pts[which_gz]; pt++)
-        {
-          const int i0dest = bcstruct->inner[which_gz][pt].inner_bc_dest_pt.i0;
-          const int i1dest = bcstruct->inner[which_gz][pt].inner_bc_dest_pt.i1;
-          const int i2dest = bcstruct->inner[which_gz][pt].inner_bc_dest_pt.i2;
-          const int i0src = bcstruct->inner[which_gz][pt].inner_bc_src_pt.i0;
-          const int i1src = bcstruct->inner[which_gz][pt].inner_bc_src_pt.i1;
-          const int i2src = bcstruct->inner[which_gz][pt].inner_bc_src_pt.i2;
-          const int8_t *prty = bcstruct->inner[which_gz][pt].parity;
-          //                printf("%d\n",bcstruct->inner_bc_parity[which_gz][pt].parity[gfs_parity[which_gf]]);
-          gfs[IDX4S(which_gf, i0dest, i1dest, i2dest)] =
-              bcstruct->inner[which_gz][pt].parity[gfs_parity[which_gf]] * gfs[IDX4S(which_gf, i0src, i1src, i2src)];
+        // for (int pt = 0; pt < bcstruct->num_ib_gz_pts[which_gz]; pt++)
+        // {
+        //   const int i0dest = bcstruct->inner[which_gz][pt].inner_bc_dest_pt.i0;
+        //   const int i1dest = bcstruct->inner[which_gz][pt].inner_bc_dest_pt.i1;
+        //   const int i2dest = bcstruct->inner[which_gz][pt].inner_bc_dest_pt.i2;
+        //   const int i0src = bcstruct->inner[which_gz][pt].inner_bc_src_pt.i0;
+        //   const int i1src = bcstruct->inner[which_gz][pt].inner_bc_src_pt.i1;
+        //   const int i2src = bcstruct->inner[which_gz][pt].inner_bc_src_pt.i2;
+        //   const int8_t *prty = bcstruct->inner[which_gz][pt].parity;
+        //   //                printf("%d\n",bcstruct->inner_bc_parity[which_gz][pt].parity[gfs_parity[which_gf]]);
+        //   gfs[IDX4S(which_gf, i0dest, i1dest, i2dest)] =
+        //       bcstruct->inner[which_gz][pt].parity[gfs_parity[which_gf]] * gfs[IDX4S(which_gf, i0src, i1src, i2src)];
         } // END for(int pt=0;pt<num_ib_gz_pts[which_gz];pt++)
       }   // END for(int which_gz = 0; which_gz < NGHOSTS; which_gz++)
     }     // END for(int which_gf=0;which_gf<NUM_GFS;which_gf++)
