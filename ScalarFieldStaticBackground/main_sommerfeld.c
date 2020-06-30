@@ -58,13 +58,14 @@
 //#include "SIMD/SIMD_intrinsics.h"
 #include "rhs_eval.h"
 #include "print_ghosts.h"
+#include "apply_inner_parity_conditions.h"
 
 int main(int argc, const char *argv[])
 {
 
     // Enable floating point exceptions
     // feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
-    feenableexcept(FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID);
+    // feenableexcept(FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID);
 
     // Define parameter struct
     paramstruct params;
@@ -247,9 +248,8 @@ int main(int argc, const char *argv[])
     // Set up initial data
     initial_data(&params, xx, y_n_gfs);
 
-    // Apply Sommerfeld BCs to correctly define the values at inner boundaries
-    // k_odd_gfs is just a placeholder, we don't care about RHSs at this point
-    apply_bcs_sommerfeld(&params, xx, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, y_n_gfs, k_odd_gfs); 
+    // Apply inner parity conditions to inital data
+    apply_inner_parity_conditions(&params, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, y_n_gfs);
 
     // We don't apply boundary conditions to the initial data
     // Because Sommerfeld BCs are applied within the RK evolution
