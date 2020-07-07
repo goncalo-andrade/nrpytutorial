@@ -2,4 +2,6 @@
 out*.txt
 htmlcov/
 .coverage
-ScalarFieldStaticBackground/
+ScalarFieldStaticBackground/*/
+.ipynb_checkpoints/
+.vscode/
