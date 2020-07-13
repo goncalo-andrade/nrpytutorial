@@ -55,8 +55,7 @@ def flat_metric_quantities():
     coords = [r, th, ph]
 
     # Declare global 3-metric variables
-    global gammabarUU, GammabarUDD
-    global gammabarDD
+    global gammabarDD, gammabarUU, GammabarUDD
 
     # Define the 3-metric gammabarDD
     gammabarDD = ixp.zerorank2()
@@ -227,21 +226,18 @@ def schwarzschild_metric_quantities():
     global psi
 
     # Set the conformal factor psi
-    # Dennison and Baumgarte (2014) Eq. 13
-    # https://arxiv.org/pdf/1403.5484.pdf
     psi = sp.sqrt(1 + M/r)
 
     # Declare global 3-metric variables
-    global gammabarUU, GammabarUDD
-    global gammabarDD
+    global gammabarDD, gammabarUU, GammabarUDD
 
-    # Define the metric as psi^4 * \eta_{ij}
+    # Define the 3-metric as psi^4 * \eta_{ij}
     gammabarDD = ixp.zerorank2()
     gammabarDD[0][0] = psi**4
     gammabarDD[1][1] = psi**4 * r**2
     gammabarDD[2][2] = psi**4 * r**2 * sp.sin(th)**2
 
-    # Define gammabarUU as thje matrix inverse of gammabarDD
+    # Define gammabarUU as the matrix inverse of gammabarDD
     gammabarUU, _ = ixp.symm_matrix_inverter3x3(gammabarDD)
 
     # Define the derivatives of gammabarDD
@@ -313,7 +309,7 @@ def schwarzschild_metric_quantities():
 
     # Define betaU_dD
     betaU_dD = ixp.zerorank2()
-    
+
     # Compute betaU_dD symbolically
     for i in range(DIM):
         for j in range(DIM):
@@ -352,19 +348,165 @@ def schwarzschild_metric_quantities():
                     GammabarUDD[i][j][k], coords, rfm.xxSph)
 
 
-# def kerr_metric_quantities():
+def kerr_metric_quantities():
+
+    # Based on the BSSN/UIUCBlackHole module
+
+    # Call declare_gauge_and_field_gridfunctions_if_not_declared_already()
+    _, _ = declare_gauge_and_field_gridfunctions_if_not_declared_already()
+
+    # Set spatial dimension to 3
+    DIM = 3
+
+    # Call reference metric if it hasn't been called already
+    if not rfm.have_already_called_reference_metric_function:
+        rfm.reference_metric()
+
+    # Check if the coordinate system is spherical
+    # This can be extended if desired
+    CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
+    if not "Spherical" in CoordSystem:
+        print("Error: CoordSystem = " + CoordSystem + " unsupported!")
+        sys.exit(1)
+
+    # Define the spherical coordinate variables
+    r, th, ph = sp.symbols("r th ph", real=True)
+    coords = [r, th, ph]
+
+    # Set up auxiliary quantities
+
+    # Spin per unit mass
+    a = M * chi
+
+    # Boyer-Lindquist outer and inner horizons
+    rp = M + sp.sqrt(M**2 - a**2)
+    rm = M - sp.sqrt(M**2 - a**2)
+
+    # Boyer-Lindquist radius in terms of UIUC radius
+    rBL = r * (1 + rp / (4 * r))**2
+
+    # \Sigma = r_{BL}^2 + a^2 \cos^2 \theta
+    SIG = rBL**2 + a**2 * sp.cos(th)**2
+
+    # \Delta = r_{BL}^2 - 2 M r_{BL} + a^2
+    DEL = rBL**2 - 2 * M * rBL + a**2
+
+    # A = (r_{BL}^2 + a^2)^2 - \Delta a^2 \sin^2 \theta
+    AA = (rBL**2 + a**2)**2 - DEL * a**2 * sp.sin(th)**2
+
+    # Declare global 3-metric variables
+    global gammabarDD, gammabarUU, GammabarUDD
+
+    # Define the 3-metric
+    gammabarDD = ixp.zerorank2()
+    gammabarDD[0][0] = (SIG * (r + rp / 4)**2) / (r**3 * (rBL - rm))
+    gammabarDD[1][1] = SIG
+    gammabarDD[2][2] = AA * sp.sin(th)**2 / SIG
+
+    # Define gammabarUU as the matrix inverse of gammabarDD
+    gammabarUU, _ = ixp.symm_matrix_inverter3x3(gammabarDD)
+
+    # Define the derivatives of gammabarDD
+    # needed to compute the Christoffel symbols
+    gammabarDD_dD = ixp.zerorank3()
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                gammabarDD_dD[i][j][k] = sp.diff(gammabarDD[i][j], coords[k])
+
+    # Compute the Christoffel symbols
+    GammabarUDD = ixp.zerorank3()
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                for m in range(DIM):
+                    GammabarUDD[i][j][k] += sp.Rational(1, 2) * gammabarUU[i][m] * \
+                        (gammabarDD_dD[m][j][k] + gammabarDD_dD[m][k][j] - gammabarDD_dD[j][k][m])
+
+    # We don't need to define the extrinsic curvature
+    # All we care about is its trace, which is 0
+
+    global trK, psi, phi, exp_m4phi, phi_dD
+
+    # Set trK to 0
+    trK = sp.sympify(0)
+
+    # Define the conformal factor psi
+    psi = AA / SIG
+
+    # Define phi and exp_m4phi
+    phi = sp.log(psi)
+    exp_m4phi = sp.exp(-4*phi)
+
+    # Define the derivatives of phi
+    phi_dD = ixp.zerorank1()
+    for i in range(DIM):
+        phi_dD[i] = sp.diff(phi, coords[i])
+
+    # Declare global gague variables and derivatives
+    global alpha, alpha_dD, betaU, betaU_dD
+
+    # Set alpha = 1 / psi^2
+    alpha = 1 / psi**2
+
+    # Define alpha_dD
+    alpha_dD = ixp.zerorank1()
+
+    # Compute alpha_dD symbolically
+    for i in range(DIM):
+        alpha_dD[i] = sp.diff(alpha, coords[i])
+
+    # Define betaU = 0
+    betaU = ixp.zerorank1()
+
+    # Define betaU_dD = 0
+    betaU_dD = ixp.zerorank2()
+
+    # This function replaces the spherical coordinates r, th, ph for the numerical grid xx0, xx1, xx2
+    # Taken from BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear.py
+    def sympify_integers__replace_rthph_or_Cartxyz(obj, rthph_or_xyz, rthph_or_xyz_of_xx):
+        if isinstance(obj, int):
+            return sp.sympify(obj)
+        else:
+            return obj.subs(rthph_or_xyz[0], rthph_or_xyz_of_xx[0]).\
+                subs(rthph_or_xyz[1], rthph_or_xyz_of_xx[1]).\
+                subs(rthph_or_xyz[2], rthph_or_xyz_of_xx[2])
+
+    # Replace spherical coordinates for computational grid variables everywhere
+    trK = sympify_integers__replace_rthph_or_Cartxyz(trK, coords, rfm.xxSph)
+    psi = sympify_integers__replace_rthph_or_Cartxyz(psi, coords, rfm.xxSph)
+    phi = sympify_integers__replace_rthph_or_Cartxyz(phi, coords, rfm.xxSph)
+    exp_m4phi = sympify_integers__replace_rthph_or_Cartxyz(
+        exp_m4phi, coords, rfm.xxSph)
+    alpha = sympify_integers__replace_rthph_or_Cartxyz(
+        alpha, coords, rfm.xxSph)
+    for i in range(DIM):
+        alpha_dD[i] = sympify_integers__replace_rthph_or_Cartxyz(
+            alpha_dD[i], coords, rfm.xxSph)
+        betaU[i] = sympify_integers__replace_rthph_or_Cartxyz(
+            betaU, coords, rfm.xxSph)
+        for j in range(DIM):
+            gammabarDD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
+                gammabarDD[i][j], coords, rfm.xxSph)
+            gammabarUU[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
+                gammabarUU[i][j], coords, rfm.xxSph)
+            betaU_dD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
+                betaU_dD[i][j], coords, rfm.xxSph)
+            for k in range(DIM):
+                GammabarUDD[i][j][k] = sympify_integers__replace_rthph_or_Cartxyz(
+                    GammabarUDD[i][j][k], coords, rfm.xxSph)
 
 
 def metric_quantities():
 
     metric = par.parval_from_str(thismodule + "::BackgroundMetric")
-    
+
     if metric == "Minkowski":
         flat_metric_quantities()
     elif metric == "Schwarzschild":
         schwarzschild_metric_quantities()
-    # elif metric == "Kerr":
-    #     kerr_metric_quantities()
+    elif metric == "Kerr":
+        kerr_metric_quantities()
     else:
         print(f"Error: Background Metric {metric} unsupported!")
         print(f"The suported background metrics by the {thismodule} module are:")
