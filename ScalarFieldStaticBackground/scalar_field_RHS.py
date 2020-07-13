@@ -99,6 +99,8 @@ def field_RHSs():
         # Shift advection derivatives are upwinded
         Pi_rhs += betaU[i] * Pi_dupD[i]
 
+    Pi_rhs = sp.simplify(Pi_rhs)
+
     #################### TEMPORARY: MULTIPLY EXPRESSIONS BY R TO EVOLVE R*GF INSTEAD OF JUST GF ####################
 
     # # Define the spherical coordinates
