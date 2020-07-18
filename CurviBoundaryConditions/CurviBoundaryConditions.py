@@ -16,7 +16,7 @@ import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line int
 import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
 
 def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.join("../"),
-                                   enable_copy_of_static_Ccodes=True, BoundaryCondition="QPE"):
+                                   enable_copy_of_static_Ccodes=True, BoundaryCondition="QuadraticExtrapolation"):
     # Step P0: Check that Ccodesdir is not the same as CurviBoundaryConditions/boundary_conditions,
     #          to prevent trusted versions of these C codes from becoming contaminated.
     if os.path.join(Ccodesdir) == os.path.join("CurviBoundaryConditions", "boundary_conditions"):
@@ -32,7 +32,7 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
         # Choosing boundary condition drivers with in NRPy+
         #  - current options are Quadratic Polynomial Extrapolation for any coordinate system,
         #    and the Sommerfeld boundary condition for only cartesian coordinates
-        if   str(BoundaryCondition) == "QPE":
+        if   str(BoundaryCondition) == "QuadraticExtrapolation":
             for file in ["apply_bcs_curvilinear.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
                          "driver_bcstruct.h", "set_bcstruct.h", "set_up__bc_gz_map_and_parity_condns.h"]:
                 shutil.copy(os.path.join("CurviBoundaryConditions", "boundary_conditions", file),
@@ -52,7 +52,7 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
                 file.write("\n#include \"apply_bcs_sommerfeld.h\"")
 
 
-        elif str(BoundaryCondition) == "QPE&Sommerfeld":
+        elif str(BoundaryCondition) == "QuadraticExtrapolation&Sommerfeld":
             for file in ["apply_bcs_curvilinear.h","apply_bcs_sommerfeld.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
                          "driver_bcstruct.h", "set_bcstruct.h", "set_up__bc_gz_map_and_parity_condns.h"]:
                 shutil.copy(os.path.join("CurviBoundaryConditions", "boundary_conditions", file),
@@ -64,7 +64,7 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
 
 
         else:
-            print("ERROR: Only Quadratic Polynomial Extrapolation (QPE) and Sommerfeld boundary conditions are currently supported\n")
+            print("ERROR: Only Quadratic Polynomial Extrapolation (QuadraticExtrapolation) and Sommerfeld boundary conditions are currently supported\n")
             sys.exit(1)
 
 
@@ -356,36 +356,38 @@ const REAL evolgf_speed[NUM_EVOL_GFS] = """+var_speed_string+"""
                  ["*_r","*_dxU_fdD"],filename="returnstring",params="includebraces=False")
 
         # https://stackoverflow.com/questions/8951020/pythonic-circular-list
-        cyc = ['0', '1', '2']
-        def gen_central_fd_stencil_str(dirn, fd_order):
+        def gen_central_fd_stencil_str(intdirn, fd_order):
             if fd_order == 2:
-                if dirn == 0:
-                    return "(gfs[IDX4S(which_gf,i0+1,i1,i2)]-gfs[IDX4S(which_gf,i0-1,i1,i2)])"
-                elif dirn == 1:
-                    return "(gfs[IDX4S(which_gf,i0,i1+1,i2)]-gfs[IDX4S(which_gf,i0,i1-1,i2)])"
-                elif dirn == 2:
-                    return "(gfs[IDX4S(which_gf,i0,i1,i2+1)]-gfs[IDX4S(which_gf,i0,i1,i2-1)])"
+                if intdirn == 0:
+                    return "(gfs[IDX4S(which_gf,i0+1,i1,i2)]-gfs[IDX4S(which_gf,i0-1,i1,i2)])*0.5"  # Does not include the 1/dx multiplication
+                elif intdirn == 1:
+                    return "(gfs[IDX4S(which_gf,i0,i1+1,i2)]-gfs[IDX4S(which_gf,i0,i1-1,i2)])*0.5"  # Does not include the 1/dy multiplication
+                elif intdirn == 2:
+                    return "(gfs[IDX4S(which_gf,i0,i1,i2+1)]-gfs[IDX4S(which_gf,i0,i1,i2-1)])*0.5"  # Does not include the 1/dz multiplication
 
-        def output_dfdx(dirn, fd_order):
+        def output_dfdx(intdirn, fd_order):
+            dirn = str(intdirn)
+            dirnp1 = str((intdirn+1)%3)  # if dirn='0', then we want this to be '1'; '1' then '2'; and '2' then '0'
+            dirnp2 = str((intdirn+2)%3)  # if dirn='0', then we want this to be '2'; '1' then '0'; and '2' then '1'
             if fd_order == 2:
                 return """
-// On a +x"""+str(dirn)+""" or -x"""+str(dirn)+""" face, do up/down winding as appropriate:
-if(abs(FACEXi["""+str(dirn)+"""])==1 || i"""+str(dirn)+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""+str(dirn)+""" || i"""+str(dirn)+"""-NGHOSTS <= 0) {
-    int8_t SHIFTSTENCIL"""+str(dirn)+""" = FACEXi["""+str(dirn)+"""];
-    if(i"""+str(dirn)+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""+str(dirn)+""") SHIFTSTENCIL"""+str(dirn)+""" = -1;
-    if(i"""+str(dirn)+"""-NGHOSTS <= 0)                  SHIFTSTENCIL"""+str(dirn)+""" = +1;
-    SHIFTSTENCIL"""+str(cyc[(dirn + 1) % len(cyc)])+""" = 0;
-    SHIFTSTENCIL"""+str(cyc[(dirn + 2) % len(cyc)])+""" = 0;
+// On a +x"""+dirn+""" or -x"""+dirn+""" face, do up/down winding as appropriate:
+if(abs(FACEXi["""+dirn+"""])==1 || i"""+dirn+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""+dirn+""" || i"""+dirn+"""-NGHOSTS <= 0) {
+    int8_t SHIFTSTENCIL"""+dirn+""" = FACEXi["""+dirn+"""];
+    if(i"""+dirn+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""+dirn+""") SHIFTSTENCIL"""+dirn+""" = -1;
+    if(i"""+dirn+"""-NGHOSTS <= 0)                  SHIFTSTENCIL"""+dirn+""" = +1;
+    SHIFTSTENCIL"""+dirnp1+""" = 0;
+    SHIFTSTENCIL"""+dirnp2+""" = 0;
 
-    fdD"""+str(dirn)+"""
-        = SHIFTSTENCIL"""+str(dirn)+"""*(-1.5*gfs[IDX4S(which_gf,i0+0*SHIFTSTENCIL0,i1+0*SHIFTSTENCIL1,i2+0*SHIFTSTENCIL2)]
+    fdD"""+dirn+"""
+        = SHIFTSTENCIL"""+dirn+"""*(-1.5*gfs[IDX4S(which_gf,i0+0*SHIFTSTENCIL0,i1+0*SHIFTSTENCIL1,i2+0*SHIFTSTENCIL2)]
                          +2.*gfs[IDX4S(which_gf,i0+1*SHIFTSTENCIL0,i1+1*SHIFTSTENCIL1,i2+1*SHIFTSTENCIL2)]
                          -0.5*gfs[IDX4S(which_gf,i0+2*SHIFTSTENCIL0,i1+2*SHIFTSTENCIL1,i2+2*SHIFTSTENCIL2)]
-                        )*invdx"""+str(dirn)+""";
+                        )*invdx"""+dirn+""";
 
-// Not on a +x"""+str(dirn)+""" or -x"""+str(dirn)+""" face, using centered difference:
+// Not on a +x"""+dirn+""" or -x"""+dirn+""" face, using centered difference:
 } else {
-    fdD"""+str(dirn)+""" = """+gen_central_fd_stencil_str(dirn, 2)+"""*invdx"""+str(dirn)+""";
+    fdD"""+dirn+""" = """+gen_central_fd_stencil_str(intdirn, 2)+"""*invdx"""+dirn+""";
 }
 """
             else:
@@ -394,8 +396,8 @@ if(abs(FACEXi["""+str(dirn)+"""])==1 || i"""+str(dirn)+"""+NGHOSTS >= Nxx_plus_2
 
         contraction_term_func = """
 
-void contraction_term(const paramstruct *restrict params, const int which_gf, REAL *restrict gfs, REAL *restrict xx[3],
-           int8_t FACEXi[3], int i0, int i1, int i2, REAL *restrict _r, REAL *restrict _dxU_fdD) {
+void contraction_term(const paramstruct *restrict params, const int which_gf, const REAL *restrict gfs, REAL *restrict xx[3],
+           const int8_t FACEXi[3], const int i0, const int i1, const int i2, REAL *restrict _r, REAL *restrict _dxU_fdD) {
 
 #include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
                                              * accounting for the relative path */
