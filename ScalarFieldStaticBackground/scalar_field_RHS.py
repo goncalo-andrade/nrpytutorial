@@ -22,7 +22,7 @@ def field_RHSs():
 
     # Call functions to define gridfunctions and establish related metric and gauge quantities
     # gmq.betaU_deriv()
-    gmq.flat_metric_quantities()
+    gmq.metric_quantities()
 
     # Rename variables
     Phi = gmq.Phi

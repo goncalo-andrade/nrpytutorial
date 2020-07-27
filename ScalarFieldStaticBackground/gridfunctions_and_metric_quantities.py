@@ -501,7 +501,7 @@ def metric_quantities():
 
     metric = par.parval_from_str(thismodule + "::BackgroundMetric")
 
-    if metric == "Minkowski":
+    if metric == "Minkowski" or metric == "Flat":
         flat_metric_quantities()
     elif metric == "Schwarzschild":
         schwarzschild_metric_quantities()
@@ -514,6 +514,7 @@ def metric_quantities():
         print("\t - Schwarzschild (spherically symmetric spacetime)")
         # print("\t - Kerr (rotating spacetime)")
         print("Please choose one of the above.")
+        sys.exit(1)
 
 # def betaU_deriv():
 

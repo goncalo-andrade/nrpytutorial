@@ -36,7 +36,7 @@ def scalar_field_ID():
     coords = [r, th, ph]
 
     # Define the conformal factor psi
-    gmq.flat_metric_quantities()
+    gmq.metric_quantities()
     psi = gmq.psi
 
     # Set up the initial data for the field depending on IDStateType
@@ -126,7 +126,7 @@ def scalar_field_test_ID():
     r, th, ph, t = sp.symbols("r th ph t", real=True)
     coords = [r, th, ph]
 
-    gmq.flat_metric_quantities()
+    gmq.metric_quantities()
     alpha = gmq.alpha
     betaU = gmq.betaU
 
@@ -193,7 +193,7 @@ def scalar_field_plane_wave_ID(k0, k1, k2):
     cart_coords = [x, y, z]
     t = sp.symbols('t', real=True)
 
-    gmq.flat_metric_quantities()
+    gmq.metric_quantities()
     alpha = gmq.alpha
     betaU = gmq.betaU
 
