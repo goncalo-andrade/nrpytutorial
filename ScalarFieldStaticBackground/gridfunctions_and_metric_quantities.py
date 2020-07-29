@@ -7,7 +7,8 @@ import sys
 
 thismodule = __name__
 # Background Metric
-par.initialize_param(par.glb_param("char", thismodule, "BackgroundMetric", "Kerr"))
+par.initialize_param(par.glb_param(
+    "char", thismodule, "BackgroundMetric", "Kerr"))
 # Mass (for the Schwarzschild and Kerr solutions) and spin (for the Kerr solution)
 M, chi = par.Cparameters("REAL", thismodule, ["M", "chi"], [1.0, 0.99])
 # par.set_parval_from_str("reference_metric::CoordSystem", "Spherical")
@@ -84,7 +85,8 @@ def flat_metric_quantities():
             for k in range(DIM):
                 for m in range(DIM):
                     GammabarUDD[i][j][k] += sp.Rational(1, 2) * gammabarUU[i][m] * \
-                        (gammabarDD_dD[m][j][k] + gammabarDD_dD[m][k][j] - gammabarDD_dD[j][k][m])
+                        (gammabarDD_dD[m][j][k] + gammabarDD_dD[m]
+                         [k][j] - gammabarDD_dD[j][k][m])
 
     # This function replaces the spherical coordinates r, th, ph for the numerical grid xx0, xx1, xx2
     # Taken from BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear.py
@@ -231,11 +233,21 @@ def schwarzschild_metric_quantities():
     # Declare global 3-metric variables
     global gammabarDD, gammabarUU, GammabarUDD
 
-    # Define the 3-metric as psi^4 * \eta_{ij}
+    # Define the physical 3-metric
+    gammaDD = ixp.zerorank2()
+    gammaDD[0][0] = psi**4
+    gammaDD[1][1] = psi**4 * r**2
+    gammaDD[2][2] = psi**4 * r**2 * sp.sin(th)**2
+
+    # Define the determinant of gammaDD
+    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+
+    # Define the conformal 3-metric gammabarDD
     gammabarDD = ixp.zerorank2()
-    gammabarDD[0][0] = psi**4
-    gammabarDD[1][1] = psi**4 * r**2
-    gammabarDD[2][2] = psi**4 * r**2 * sp.sin(th)**2
+    for i in range(DIM):
+        for j in range(DIM):
+            gammabarDD[i][j] = (
+                rfm.detgammahat / gammaDET)**sp.Rational(1, 3) * gammaDD[i][j]
 
     # Define gammabarUU as the matrix inverse of gammabarDD
     gammabarUU, _ = ixp.symm_matrix_inverter3x3(gammabarDD)
@@ -255,7 +267,8 @@ def schwarzschild_metric_quantities():
             for k in range(DIM):
                 for m in range(DIM):
                     GammabarUDD[i][j][k] += sp.Rational(1, 2) * gammabarUU[i][m] * \
-                        (gammabarDD_dD[m][j][k] + gammabarDD_dD[m][k][j] - gammabarDD_dD[j][k][m])
+                        (gammabarDD_dD[m][j][k] + gammabarDD_dD[m]
+                         [k][j] - gammabarDD_dD[j][k][m])
 
     # Define the extrinsic curvature
     KDD = ixp.zerorank2()
@@ -329,13 +342,17 @@ def schwarzschild_metric_quantities():
     trK = sympify_integers__replace_rthph_or_Cartxyz(trK, coords, rfm.xxSph)
     psi = sympify_integers__replace_rthph_or_Cartxyz(psi, coords, rfm.xxSph)
     phi = sympify_integers__replace_rthph_or_Cartxyz(phi, coords, rfm.xxSph)
-    exp_m4phi = sympify_integers__replace_rthph_or_Cartxyz(exp_m4phi, coords, rfm.xxSph)
-    alpha = sympify_integers__replace_rthph_or_Cartxyz(alpha, coords, rfm.xxSph)
+    exp_m4phi = sympify_integers__replace_rthph_or_Cartxyz(
+        exp_m4phi, coords, rfm.xxSph)
+    alpha = sympify_integers__replace_rthph_or_Cartxyz(
+        alpha, coords, rfm.xxSph)
     for i in range(DIM):
         alpha_dD[i] = sympify_integers__replace_rthph_or_Cartxyz(
             alpha_dD[i], coords, rfm.xxSph)
         betaU[i] = sympify_integers__replace_rthph_or_Cartxyz(
-            betaU, coords, rfm.xxSph)
+            betaU[i], coords, rfm.xxSph)
+        phi_dD[i] = sympify_integers__replace_rthph_or_Cartxyz(
+            phi_dD[i], coords, rfm.xxSph)
         for j in range(DIM):
             gammabarDD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
                 gammabarDD[i][j], coords, rfm.xxSph)
@@ -421,7 +438,8 @@ def kerr_metric_quantities():
             for k in range(DIM):
                 for m in range(DIM):
                     GammabarUDD[i][j][k] += sp.Rational(1, 2) * gammabarUU[i][m] * \
-                        (gammabarDD_dD[m][j][k] + gammabarDD_dD[m][k][j] - gammabarDD_dD[j][k][m])
+                        (gammabarDD_dD[m][j][k] + gammabarDD_dD[m]
+                         [k][j] - gammabarDD_dD[j][k][m])
 
     # We don't need to define the extrinsic curvature
     # All we care about is its trace, which is 0
@@ -484,7 +502,9 @@ def kerr_metric_quantities():
         alpha_dD[i] = sympify_integers__replace_rthph_or_Cartxyz(
             alpha_dD[i], coords, rfm.xxSph)
         betaU[i] = sympify_integers__replace_rthph_or_Cartxyz(
-            betaU, coords, rfm.xxSph)
+            betaU[i], coords, rfm.xxSph)
+        phi_dD[i] = sympify_integers__replace_rthph_or_Cartxyz(
+            phi_dD[i], coords, rfm.xxSph)
         for j in range(DIM):
             gammabarDD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
                 gammabarDD[i][j], coords, rfm.xxSph)
@@ -501,7 +521,7 @@ def metric_quantities():
 
     metric = par.parval_from_str(thismodule + "::BackgroundMetric")
 
-    if metric == "Minkowski" or metric == "Flat":
+    if metric == "Minkowski":
         flat_metric_quantities()
     elif metric == "Schwarzschild":
         schwarzschild_metric_quantities()
@@ -509,12 +529,49 @@ def metric_quantities():
         kerr_metric_quantities()
     else:
         print(f"Error: Background Metric {metric} unsupported!")
-        print(f"The suported background metrics by the {thismodule} module are:")
+        print(
+            f"The suported background metrics by the {thismodule} module are:")
         print("\t - Minkowski (flat spacetime)")
         print("\t - Schwarzschild (spherically symmetric spacetime)")
         # print("\t - Kerr (rotating spacetime)")
         print("Please choose one of the above.")
         sys.exit(1)
+
+
+def print_gmq_quantities():
+
+    DIM = 3
+
+    print('Printing metric quantities...')
+    print(f'trK = {trK}')
+    print(f'psi = {psi}')
+    print(f'phi = {phi}')
+    print(f'exp_m4phi = {exp_m4phi}')
+    print(f'alpha = {alpha}')
+    print('Printing alpha_dD...')
+    for i in range(DIM):
+        print(f'alpha_dD[{i}] = {alpha_dD[i]}')
+    print('Printing betaU...')
+    for i in range(DIM):
+        print(f'betaU[{i}] = {betaU[i]}')
+    print('Printing gammabarDD...')
+    for i in range(DIM):
+        for j in range(DIM):
+            print(f'gammabarDD[{i}][{j}] = {gammabarDD[i][j]}')
+    print('Printing gammabarUU...')
+    for i in range(DIM):
+        for j in range(DIM):
+            print(f'gammabarUU[{i}][{j}] = {gammabarUU[i][j]}')
+    print('Printing betaU_dD...')
+    for i in range(DIM):
+        for j in range(DIM):
+            print(f'betaU[{i}][{j}] = {betaU_dD[i][j]}')
+    print('Printing GammabarUDD...')
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                print(f'GammabarUDD[{i}][{j}][{k}] = {GammabarUDD[i][j][k]}')
+
 
 # def betaU_deriv():
 

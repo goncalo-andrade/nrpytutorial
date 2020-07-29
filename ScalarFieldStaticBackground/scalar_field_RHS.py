@@ -24,6 +24,8 @@ def field_RHSs():
     # gmq.betaU_deriv()
     gmq.metric_quantities()
 
+    gmq.print_gmq_quantities()
+
     # Rename variables
     Phi = gmq.Phi
     Pi = gmq.Pi
@@ -99,7 +101,7 @@ def field_RHSs():
         # Shift advection derivatives are upwinded
         Pi_rhs += betaU[i] * Pi_dupD[i]
 
-    Pi_rhs = sp.simplify(Pi_rhs)
+    # Pi_rhs = sp.simplify(Pi_rhs)
 
     #################### TEMPORARY: MULTIPLY EXPRESSIONS BY R TO EVOLVE R*GF INSTEAD OF JUST GF ####################
 
