@@ -543,34 +543,57 @@ def print_gmq_quantities():
     DIM = 3
 
     print('Printing metric quantities...')
+    print('\n')
+
     print(f'trK = {trK}')
+    print('\n')
+
     print(f'psi = {psi}')
+    print('\n')
+
     print(f'phi = {phi}')
+    print('\n')
+
     print(f'exp_m4phi = {exp_m4phi}')
+    print('\n')
+
     print(f'alpha = {alpha}')
+    print('\n')
+
     print('Printing alpha_dD...')
     for i in range(DIM):
         print(f'alpha_dD[{i}] = {alpha_dD[i]}')
+    print('\n')
+
     print('Printing betaU...')
     for i in range(DIM):
         print(f'betaU[{i}] = {betaU[i]}')
+    print('\n')
+
     print('Printing gammabarDD...')
     for i in range(DIM):
         for j in range(DIM):
             print(f'gammabarDD[{i}][{j}] = {gammabarDD[i][j]}')
+    print('\n')
+
     print('Printing gammabarUU...')
     for i in range(DIM):
         for j in range(DIM):
             print(f'gammabarUU[{i}][{j}] = {gammabarUU[i][j]}')
+    print('\n')
+
     print('Printing betaU_dD...')
     for i in range(DIM):
         for j in range(DIM):
             print(f'betaU[{i}][{j}] = {betaU_dD[i][j]}')
+    print('\n')
+
     print('Printing GammabarUDD...')
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 print(f'GammabarUDD[{i}][{j}][{k}] = {GammabarUDD[i][j][k]}')
+    print('\n')
 
 
 # def betaU_deriv():
