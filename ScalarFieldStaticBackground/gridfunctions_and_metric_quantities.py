@@ -31,6 +31,16 @@ def declare_gauge_and_field_gridfunctions_if_not_declared_already():
 
     return Phi, Pi
 
+# This function replaces the spherical coordinates r, th, ph for the numerical grid xx0, xx1, xx2
+# Taken from BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear.py
+def sympify_integers__replace_rthph_or_Cartxyz(obj, rthph_or_xyz, rthph_or_xyz_of_xx):
+    if isinstance(obj, int):
+        return sp.sympify(obj)
+    else:
+        return obj.subs(rthph_or_xyz[0], rthph_or_xyz_of_xx[0]).\
+            subs(rthph_or_xyz[1], rthph_or_xyz_of_xx[1]).\
+            subs(rthph_or_xyz[2], rthph_or_xyz_of_xx[2])
+
 
 def flat_metric_quantities():
 
@@ -55,149 +65,203 @@ def flat_metric_quantities():
     r, th, ph = sp.symbols("r th ph", real=True)
     coords = [r, th, ph]
 
+    # # Declare global 3-metric variables
+    # global gammabarDD, gammabarUU, GammabarUDD
+
+    # # Define the 3-metric gammabarDD
+    # gammabarDD = ixp.zerorank2()
+
+    # # Compute the diagonal values of gammabarDD
+    # # representing a flat metric in spherical coordinates
+    # gammabarDD[0][0] += 1
+    # gammabarDD[1][1] += r**2
+    # gammabarDD[2][2] += (r * sp.sin(th))**2
+
+    # # Define gammabarUU as the matrix inverse of gammabarDD
+    # gammabarUU, _ = ixp.symm_matrix_inverter3x3(gammabarDD)
+
+    # # Define the derivatives of gammabarDD
+    # # needed to compute the Christoffel symbols
+    # gammabarDD_dD = ixp.zerorank3()
+    # for i in range(DIM):
+    #     for j in range(DIM):
+    #         for k in range(DIM):
+    #             gammabarDD_dD[i][j][k] = sp.diff(gammabarDD[i][j], coords[k])
+
+    # # Compute the Christoffel symbols
+    # GammabarUDD = ixp.zerorank3()
+    # for i in range(DIM):
+    #     for j in range(DIM):
+    #         for k in range(DIM):
+    #             for m in range(DIM):
+    #                 GammabarUDD[i][j][k] += sp.Rational(1, 2) * gammabarUU[i][m] * \
+    #                     (gammabarDD_dD[m][j][k] + gammabarDD_dD[m]
+    #                      [k][j] - gammabarDD_dD[j][k][m])
+
+    # # This function replaces the spherical coordinates r, th, ph for the numerical grid xx0, xx1, xx2
+    # # Taken from BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear.py
+    # def sympify_integers__replace_rthph_or_Cartxyz(obj, rthph_or_xyz, rthph_or_xyz_of_xx):
+    #     if isinstance(obj, int):
+    #         return sp.sympify(obj)
+    #     else:
+    #         return obj.subs(rthph_or_xyz[0], rthph_or_xyz_of_xx[0]).\
+    #             subs(rthph_or_xyz[1], rthph_or_xyz_of_xx[1]).\
+    #             subs(rthph_or_xyz[2], rthph_or_xyz_of_xx[2])
+
+    # # Replace the spherical coordinates r, th and ph in gammabarDD, gammabarUU and GammabarUDD
+    # # by the computational grid coordinates xx0, xx1, xx2
+    # for i in range(DIM):
+    #     for j in range(DIM):
+    #         gammabarDD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
+    #             gammabarDD[i][j], coords, rfm.xxSph)
+    #         gammabarUU[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
+    #             gammabarUU[i][j], coords, rfm.xxSph)
+    #         for k in range(DIM):
+    #             GammabarUDD[i][j][k] = sympify_integers__replace_rthph_or_Cartxyz(
+    #                 GammabarUDD[i][j][k], coords, rfm.xxSph)
+
+    # # Declare the global quantities for the trace of the extrisic curvature,
+    # # for the conformal factors psi and phi, and for related quantities
+    # global trK, psi, phi, exp_m4phi, phi_dD
+
+    # # Set trK to 0 (harmonic slicing)
+    # trK = sp.sympify(0)
+
+    # # Set the conformal factor \psi to 1
+    # # From the definition, \psi = (\frac{\gamma}{\bar{\gamma}})^{\frac{1}{3}}
+    # # Since \gamma_{ij} and \bar{\gamma}_{ij} are the same, \psi = 1
+    # psi = sp.sympify(1)
+
+    # # Define the conformal factor phi and related quantities as functions of psi
+    # phi = sp.log(psi)
+    # exp_m4phi = sp.exp(-4*phi)
+
+    # # Define the derivatives of phi, taken symbolically as this is not a grid function
+    # phi_dD = ixp.zerorank1()
+    # for i in range(DIM):
+    #     phi_dD[i] = sp.diff(phi, coords[i])
+
+    # # Declare global variables for \bar{\Lambda} and derivatives
+    # global LambdabarU, LambdabarU_dD
+
+    # # Define these quantities as zero tensors
+    # LambdabarU = ixp.zerorank1()
+    # LambdabarU_dD = ixp.zerorank2()
+
+    # # Compute LambdabarU (should give 0 in this case)
+    # for i in range(DIM):
+    #     for j in range(DIM):
+    #         for k in range(DIM):
+    #             LambdabarU[i] += gammabarUU[j][k] * \
+    #                 (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
+
+    # # Simplify LambdabarU, otherwise it gives a complicated expression which will just reduce to 0
+    # for i in range(DIM):
+    #     LambdabarU[i] = sp.simplify(LambdabarU[i])
+
+    # # Compute the symbolic derivative of LambdabarU (should also give 0)
+    # # We differentiate in the computational grid coordinates as LambdabarU is already a function of these
+    # for i in range(DIM):
+    #     for j in range(DIM):
+    #         LambdabarU_dD[i][j] += sp.diff(LambdabarU[i], coords[j])
+
+    # # Convert all quantities to functions of the computational grid coordinates
+    # # instead of the usual spherical coordinates
+    # trK = sympify_integers__replace_rthph_or_Cartxyz(trK, coords, rfm.xxSph)
+    # psi = sympify_integers__replace_rthph_or_Cartxyz(psi, coords, rfm.xxSph)
+    # phi = sympify_integers__replace_rthph_or_Cartxyz(phi, coords, rfm.xxSph)
+    # exp_m4phi = sympify_integers__replace_rthph_or_Cartxyz(
+    #     exp_m4phi, coords, rfm.xxSph)
+    # for i in range(DIM):
+    #     phi_dD[i] = sympify_integers__replace_rthph_or_Cartxyz(
+    #         phi_dD[i], coords, rfm.xxSph)
+
+    # # Declare global gauge variables and derivatives
+    # global alpha, alpha_dD, betaU, betaU_dD
+
+    # # Set alpha to be 1/psi**2
+    # alpha = 1/psi**2
+
+    # # Define alpha_dD
+    # alpha_dD = ixp.zerorank1()
+
+    # # Compute alpha_dD as the symbolic derivative of alpha
+    # for i in range(DIM):
+    #     alpha_dD[i] = sp.diff(alpha, coords[i])
+
+    # # Set betaU to 0
+    # betaU = ixp.zerorank1()
+
+    # # Compute betaU_dD as the symbolic derivative of betaU
+    # betaU_dD = ixp.zerorank2()
+    # for i in range(DIM):
+    #     for j in range(DIM):
+    #         betaU_dD[i][j] = sp.diff(betaU[i], coords[j])
+
+    # # Convert all quantities to functions of the computational grid variables
+    # alpha = sympify_integers__replace_rthph_or_Cartxyz(
+    #     alpha, coords, rfm.xxSph)
+    # for i in range(DIM):
+    #     betaU[i] = sympify_integers__replace_rthph_or_Cartxyz(
+    #         betaU[i], coords, rfm.xxSph)
+    #     for j in range(DIM):
+    #         betaU_dD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
+    #             betaU_dD[i][j], coords, rfm.xxSph)
+
     # Declare global 3-metric variables
-    global gammabarDD, gammabarUU, GammabarUDD
+    global gammaDD, gammaUU, GammaUDD
 
-    # Define the 3-metric gammabarDD
-    gammabarDD = ixp.zerorank2()
+    # Define the 3-metric gammaDD
+    gammaDD = ixp.zerorank2()
 
-    # Compute the diagonal values of gammabarDD
+    # Compute the diagonal values of gammaDD
     # representing a flat metric in spherical coordinates
-    gammabarDD[0][0] += 1
-    gammabarDD[1][1] += r**2
-    gammabarDD[2][2] += (r * sp.sin(th))**2
+    gammaDD[0][0] = 1
+    gammaDD[1][1] = r**2
+    gammaDD[2][2] = (r * sp.sin(th))**2
 
-    # Define gammabarUU as the matrix inverse of gammabarDD
-    gammabarUU, _ = ixp.symm_matrix_inverter3x3(gammabarDD)
+    # Define gammaUU as the matrix inverse of gammaDD
+    gammaUU, _ = ixp.symm_matrix_inverter3x3(gammaDD)
 
     # Define the derivatives of gammabarDD
     # needed to compute the Christoffel symbols
-    gammabarDD_dD = ixp.zerorank3()
+    gammaDD_dD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                gammabarDD_dD[i][j][k] = sp.diff(gammabarDD[i][j], coords[k])
+                gammaDD_dD[i][j][k] = sp.diff(gammaDD[i][j], coords[k])
 
     # Compute the Christoffel symbols
-    GammabarUDD = ixp.zerorank3()
+    GammaUDD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                for m in range(DIM):
-                    GammabarUDD[i][j][k] += sp.Rational(1, 2) * gammabarUU[i][m] * \
-                        (gammabarDD_dD[m][j][k] + gammabarDD_dD[m]
-                         [k][j] - gammabarDD_dD[j][k][m])
+                for m in rangeD(DIM):
+                    GammaUDD[i][j][k] += sp.Rational(1, 2) * gammaUU[i][m] * \
+                        (gammaDD_dD[m][j][k] + gammaDD_dD[m]
+                         [k][j] - gammaDD_dD[j][k][m])
 
-    # This function replaces the spherical coordinates r, th, ph for the numerical grid xx0, xx1, xx2
-    # Taken from BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear.py
-    def sympify_integers__replace_rthph_or_Cartxyz(obj, rthph_or_xyz, rthph_or_xyz_of_xx):
-        if isinstance(obj, int):
-            return sp.sympify(obj)
-        else:
-            return obj.subs(rthph_or_xyz[0], rthph_or_xyz_of_xx[0]).\
-                subs(rthph_or_xyz[1], rthph_or_xyz_of_xx[1]).\
-                subs(rthph_or_xyz[2], rthph_or_xyz_of_xx[2])
+    # Declare the global quantities for the trace of the extrinsic curvature,
+    # for the lapse and the shift
+    global trK, alpha, betaU
 
-    # Replace the spherical coordinates r, th and ph in gammabarDD, gammabarUU and GammabarUDD
-    # by the computational grid coordinates xx0, xx1, xx2
-    for i in range(DIM):
-        for j in range(DIM):
-            gammabarDD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
-                gammabarDD[i][j], coords, rfm.xxSph)
-            gammabarUU[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
-                gammabarUU[i][j], coords, rfm.xxSph)
-            for k in range(DIM):
-                GammabarUDD[i][j][k] = sympify_integers__replace_rthph_or_Cartxyz(
-                    GammabarUDD[i][j][k], coords, rfm.xxSph)
-
-    # Declare the global quantities for the trace of the extrisic curvature,
-    # for the conformal factors psi and phi, and for related quantities
-    global trK, psi, phi, exp_m4phi, phi_dD
-
-    # Set trK to 0 (harmonic slicing)
+    # Set trK to 0 as the extrinsic curvature vanishes in flat spacetime
     trK = sp.sympify(0)
 
-    # Set the conformal factor \psi to 1
-    # From the definition, \psi = (\frac{\gamma}{\bar{\gamma}})^{\frac{1}{3}}
-    # Since \gamma_{ij} and \bar{\gamma}_{ij} are the same, \psi = 1
-    psi = sp.sympify(1)
-
-    # Define the conformal factor phi and related quantities as functions of psi
-    phi = sp.log(psi)
-    exp_m4phi = sp.exp(-4*phi)
-
-    # Define the derivatives of phi, taken symbolically as this is not a grid function
-    phi_dD = ixp.zerorank1()
-    for i in range(DIM):
-        phi_dD[i] = sp.diff(phi, coords[i])
-
-    # Declare global variables for \bar{\Lambda} and derivatives
-    global LambdabarU, LambdabarU_dD
-
-    # Define these quantities as zero tensors
-    LambdabarU = ixp.zerorank1()
-    LambdabarU_dD = ixp.zerorank2()
-
-    # Compute LambdabarU (should give 0 in this case)
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                LambdabarU[i] += gammabarUU[j][k] * \
-                    (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
-
-    # Simplify LambdabarU, otherwise it gives a complicated expression which will just reduce to 0
-    for i in range(DIM):
-        LambdabarU[i] = sp.simplify(LambdabarU[i])
-
-    # Compute the symbolic derivative of LambdabarU (should also give 0)
-    # We differentiate in the computational grid coordinates as LambdabarU is already a function of these
-    for i in range(DIM):
-        for j in range(DIM):
-            LambdabarU_dD[i][j] += sp.diff(LambdabarU[i], coords[j])
-
-    # Convert all quantities to functions of the computational grid coordinates
-    # instead of the usual spherical coordinates
-    trK = sympify_integers__replace_rthph_or_Cartxyz(trK, coords, rfm.xxSph)
-    psi = sympify_integers__replace_rthph_or_Cartxyz(psi, coords, rfm.xxSph)
-    phi = sympify_integers__replace_rthph_or_Cartxyz(phi, coords, rfm.xxSph)
-    exp_m4phi = sympify_integers__replace_rthph_or_Cartxyz(
-        exp_m4phi, coords, rfm.xxSph)
-    for i in range(DIM):
-        phi_dD[i] = sympify_integers__replace_rthph_or_Cartxyz(
-            phi_dD[i], coords, rfm.xxSph)
-
-    # Declare global gauge variables and derivatives
-    global alpha, alpha_dD, betaU, betaU_dD
-
-    # Set alpha to be 1/psi**2
-    alpha = 1/psi**2
-
-    # Define alpha_dD
-    alpha_dD = ixp.zerorank1()
-
-    # Compute alpha_dD as the symbolic derivative of alpha
-    for i in range(DIM):
-        alpha_dD[i] = sp.diff(alpha, coords[i])
-
-    # Set betaU to 0
+    # Set the lapse to 1 and the shift to 0
+    alpha = sp.sympify(1)
     betaU = ixp.zerorank1()
 
-    # Compute betaU_dD as the symbolic derivative of betaU
-    betaU_dD = ixp.zerorank2()
+    # Replace the spherical coordinates by the computational grid variables everywhere
+    trK = sympify_integers__replace_rthph_or_Cartxyz(trK, coords, rfm.xxSph)
+    alpha = sympify_integers__replace_rthph_or_Cartxyz(alpha, coords, rfm.xxSph)
     for i in range(DIM):
+        betaU[i] = sympify_integers__replace_rthph_or_Cartxyz(betaU[i], coords, rfm.xxSph)
         for j in range(DIM):
-            betaU_dD[i][j] = sp.diff(betaU[i], coords[j])
-
-    # Convert all quantities to functions of the computational grid variables
-    alpha = sympify_integers__replace_rthph_or_Cartxyz(
-        alpha, coords, rfm.xxSph)
-    for i in range(DIM):
-        betaU[i] = sympify_integers__replace_rthph_or_Cartxyz(
-            betaU[i], coords, rfm.xxSph)
-        for j in range(DIM):
-            betaU_dD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
-                betaU_dD[i][j], coords, rfm.xxSph)
-
+            gammaDD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(gammaDD[i][j], coords, rfm.xxSph)
+            gammaUU[i][j] = sympify_integers__replace_rthph_or_Cartxyz(gammaUU[i][j], coords, rfm.xxSph)
+            for k in range(DIM):
+                GammaUDD[i][j][k] = sympify_integers__replace_rthph_or_Cartxyz(GammaUDD[i][j][k], coords, rfm.xxSph)
 
 def schwarzschild_metric_quantities():
 
@@ -328,16 +392,6 @@ def schwarzschild_metric_quantities():
         for j in range(DIM):
             betaU_dD[i][j] = sp.diff(betaU[i], coords[j])
 
-    # This function replaces the spherical coordinates r, th, ph for the numerical grid xx0, xx1, xx2
-    # Taken from BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear.py
-    def sympify_integers__replace_rthph_or_Cartxyz(obj, rthph_or_xyz, rthph_or_xyz_of_xx):
-        if isinstance(obj, int):
-            return sp.sympify(obj)
-        else:
-            return obj.subs(rthph_or_xyz[0], rthph_or_xyz_of_xx[0]).\
-                subs(rthph_or_xyz[1], rthph_or_xyz_of_xx[1]).\
-                subs(rthph_or_xyz[2], rthph_or_xyz_of_xx[2])
-
     # Replace spherical coordinates for computational grid variables everywhere
     trK = sympify_integers__replace_rthph_or_Cartxyz(trK, coords, rfm.xxSph)
     psi = sympify_integers__replace_rthph_or_Cartxyz(psi, coords, rfm.xxSph)
@@ -412,24 +466,24 @@ def kerr_metric_quantities():
     AA = (rBL**2 + a**2)**2 - DEL * a**2 * sp.sin(th)**2
 
     # Declare global 3-metric variables
-    global gammabarDD, gammabarUU, GammabarUDD
+    global gammaDD, gammaUU, GammaUDD
 
     # Define the 3-metric
-    gammabarDD = ixp.zerorank2()
-    gammabarDD[0][0] = (SIG * (r + rp / 4)**2) / (r**3 * (rBL - rm))
-    gammabarDD[1][1] = SIG
-    gammabarDD[2][2] = AA * sp.sin(th)**2 / SIG
+    gammaDD = ixp.zerorank2()
+    gammaDD[0][0] = (SIG * (r + rp / 4)**2) / (r**3 * (rBL - rm))
+    gammaDD[1][1] = SIG
+    gammaDD[2][2] = AA * sp.sin(th)**2 / SIG
 
-    # Define gammabarUU as the matrix inverse of gammabarDD
-    gammabarUU, _ = ixp.symm_matrix_inverter3x3(gammabarDD)
+    # Define gammaUU as the matrix inverse of gammaDD
+    gammaUU, _ = ixp.symm_matrix_inverter3x3(gammaDD)
 
-    # Define the derivatives of gammabarDD
+    # Define the derivatives of gammaDD
     # needed to compute the Christoffel symbols
-    gammabarDD_dD = ixp.zerorank3()
+    gammaDD_dD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                gammabarDD_dD[i][j][k] = sp.diff(gammabarDD[i][j], coords[k])
+                gammaDD_dD[i][j][k] = sp.diff(gammaDD[i][j], coords[k])
 
     # Compute the Christoffel symbols
     GammabarUDD = ixp.zerorank3()
@@ -437,17 +491,25 @@ def kerr_metric_quantities():
         for j in range(DIM):
             for k in range(DIM):
                 for m in range(DIM):
-                    GammabarUDD[i][j][k] += sp.Rational(1, 2) * gammabarUU[i][m] * \
-                        (gammabarDD_dD[m][j][k] + gammabarDD_dD[m]
-                         [k][j] - gammabarDD_dD[j][k][m])
+                    GammabarUDD[i][j][k] += sp.Rational(1, 2) * gammaUU[i][m] * \
+                        (gammaDD_dD[m][j][k] + gammaDD_dD[m]
+                         [k][j] - gammaDD_dD[j][k][m])
 
-    # We don't need to define the extrinsic curvature
-    # All we care about is its trace, which is 0
+    # Define the extrinsic curvature
+    KDD = ixp.zerorank2()
+    KDD[0][2] = KDD[2][0] = (M*a*sp.sin(th)**2)/(SIG*sp.sqrt(AA*SIG)) *\
+        (3*rBL**4 + 2*a**2*rBL**2 - a**4 - a**2*(rBL**2 - a**2) *
+         sp.sin(th)**2)*(1 + rp/(4*r))*1/sp.sqrt(r*(rBL - rm))
+    KDD[1][2] = KDD[2][1] = -((2*a**3*M*rBL*sp.cos(th)*sp.sin(th)**3) /
+                              (SIG*sp.sqrt(AA*SIG)))*(r - rp/4)*sp.sqrt((rBL - rm)/r)
 
     global trK, psi, phi, exp_m4phi, phi_dD
 
-    # Set trK to 0
+    # Compute trK from the definition
     trK = sp.sympify(0)
+    for i in range(DIM):
+        for j in range(DIM):
+            trK += gammaUU[i][j] * KDD[i][j]
 
     # Define the conformal factor psi
     psi = AA / SIG
@@ -465,7 +527,10 @@ def kerr_metric_quantities():
     global alpha, alpha_dD, betaU, betaU_dD
 
     # Set alpha = 1 / psi^2
-    alpha = 1 / psi**2
+    # alpha = 1 / psi**2
+
+    # Set alpha = sqrt(DEL*SIG / AA)
+    alpha = sp.sqrt(DEL * SIG / AA)
 
     # Define alpha_dD
     alpha_dD = ixp.zerorank1()
@@ -476,19 +541,13 @@ def kerr_metric_quantities():
 
     # Define betaU = 0
     betaU = ixp.zerorank1()
+    betaU[2] = - 2 * M * a * rBL / AA
 
     # Define betaU_dD = 0
     betaU_dD = ixp.zerorank2()
-
-    # This function replaces the spherical coordinates r, th, ph for the numerical grid xx0, xx1, xx2
-    # Taken from BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear.py
-    def sympify_integers__replace_rthph_or_Cartxyz(obj, rthph_or_xyz, rthph_or_xyz_of_xx):
-        if isinstance(obj, int):
-            return sp.sympify(obj)
-        else:
-            return obj.subs(rthph_or_xyz[0], rthph_or_xyz_of_xx[0]).\
-                subs(rthph_or_xyz[1], rthph_or_xyz_of_xx[1]).\
-                subs(rthph_or_xyz[2], rthph_or_xyz_of_xx[2])
+    for i in range(DIM):
+        for j in range(DIM):
+            betaU_dD[i][j] = sp.diff(betaU[i], coords[j])
 
     # Replace spherical coordinates for computational grid variables everywhere
     trK = sympify_integers__replace_rthph_or_Cartxyz(trK, coords, rfm.xxSph)
@@ -506,10 +565,10 @@ def kerr_metric_quantities():
         phi_dD[i] = sympify_integers__replace_rthph_or_Cartxyz(
             phi_dD[i], coords, rfm.xxSph)
         for j in range(DIM):
-            gammabarDD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
-                gammabarDD[i][j], coords, rfm.xxSph)
-            gammabarUU[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
-                gammabarUU[i][j], coords, rfm.xxSph)
+            gammaDD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
+                gammaDD[i][j], coords, rfm.xxSph)
+            gammaUU[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
+                gammaUU[i][j], coords, rfm.xxSph)
             betaU_dD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
                 betaU_dD[i][j], coords, rfm.xxSph)
             for k in range(DIM):
