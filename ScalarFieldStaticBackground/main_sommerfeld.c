@@ -218,7 +218,7 @@ int main(int argc, const char *argv[])
     // Time parameters
 
     // Set final time so that the approximate outer BCs don't contaminate the data at the origin
-    const REAL t_final = t_initial + 0.5;
+    const REAL t_final = t_initial + 100.0;
 
     // Timestep based on the CFL condition
     REAL dt = find_timestep(&params, xx);
@@ -227,7 +227,7 @@ int main(int argc, const char *argv[])
     int N_final = (int)((t_final - t_initial) / dt + 0.5); // Add 0.5 to account for C rounding down
 
     // Number of iterations before outputting data
-    int output_every_N = (int)((REAL)N_final / 20.0);
+    int output_every_N = (int)((REAL)N_final / 250.0);
     if (output_every_N == 0)
         output_every_N = 1;
 
@@ -303,6 +303,24 @@ int main(int argc, const char *argv[])
             FILE *inner_ghosts_out = fopen(filename_ghosts, "w");
             print_ib_ghosts(&params, xx, &bcstruct, y_n_gfs, inner_ghosts_out);
             fclose(inner_ghosts_out);
+
+            // Print rhs values
+            char rhs_filename[100];
+            sprintf(rhs_filename, "rhs_%d_%d_%d_%.5f.txt", Nxx[0], Nxx[1], Nxx[2], current_t);
+            FILE *out_rhs = fopen(rhs_filename, "w");
+            rhs_eval(&params, xx, y_n_gfs, k_odd_gfs);
+
+            LOOP_REGION(NGHOSTS, Nxx_plus_2NGHOSTS0 - NGHOSTS,
+                        NGHOSTS, Nxx_plus_2NGHOSTS1 - NGHOSTS,
+                        NGHOSTS, Nxx_plus_2NGHOSTS2 - NGHOSTS)
+            {
+                const int idx = IDX3S(i0, i1, i2);
+                fprintf(out_rhs, "%e %e %e %e %e\n", xx[0][i0], xx[1][i1], xx[2][i2],
+                        k_odd_gfs[IDX4ptS(PHIGF, idx)], k_odd_gfs[IDX4ptS(PIGF, idx)]);
+            }
+
+            fclose(out_rhs);
+
         }
 
 // Step forward in time
@@ -339,6 +357,24 @@ int main(int argc, const char *argv[])
             FILE *inner_ghosts_out = fopen(filename_ghosts, "w");
             print_ib_ghosts(&params, xx, &bcstruct, y_n_gfs, inner_ghosts_out);
             fclose(inner_ghosts_out);
+
+            // Print rhs values
+            char rhs_filename[100];
+            sprintf(rhs_filename, "rhs_%d_%d_%d_%.5f.txt", Nxx[0], Nxx[1], Nxx[2], current_t);
+            FILE *out_rhs = fopen(rhs_filename, "w");
+            rhs_eval(&params, xx, y_n_gfs, k_odd_gfs);
+
+            LOOP_REGION(NGHOSTS, Nxx_plus_2NGHOSTS0 - NGHOSTS,
+                        NGHOSTS, Nxx_plus_2NGHOSTS1 - NGHOSTS,
+                        NGHOSTS, Nxx_plus_2NGHOSTS2 - NGHOSTS)
+            {
+                const int idx = IDX3S(i0, i1, i2);
+                fprintf(out_rhs, "%e %e %e %e %e\n", xx[0][i0], xx[1][i1], xx[2][i2],
+                        k_odd_gfs[IDX4ptS(PHIGF, idx)], k_odd_gfs[IDX4ptS(PIGF, idx)]);
+            }
+
+            fclose(out_rhs);
+
         }
 
 // Print progress indicator
@@ -380,5 +416,7 @@ int main(int argc, const char *argv[])
     for (int i = 0; i < 3; i++)
         free(xx[i]);
 
+    printf("Ran config with chi = %.2f\n", params.chi);
     return 0;
+
 }
