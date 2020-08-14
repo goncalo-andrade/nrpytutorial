@@ -29,20 +29,26 @@ def field_RHSs():
     # Rename variables
     Phi = gmq.Phi
     Pi = gmq.Pi
-    gammabarUU = gmq.gammabarUU
-    GammabarUDD = gmq.GammabarUDD
-    exp_m4phi = gmq.exp_m4phi
-    phi_dD = gmq.phi_dD
     trK = gmq.trK
     alpha = gmq.alpha
     alpha_dD = gmq.alpha_dD
     betaU = gmq.betaU
 
+    gammabarUU = gmq.gammabarUU
+    GammabarUDD = gmq.GammabarUDD
+    exp_m4phi = gmq.exp_m4phi
+    phi_dD = gmq.phi_dD
+
+    # gammaUU = gmq.gammaUU
+    # GammaUDD = gmq.GammaUDD
+
     # Undefined derivatives
     Phi_dD = ixp.declarerank1("Phi_dD")
     Phi_dDD = ixp.declarerank2("Phi_dDD", "sym01")
-    Phi_dupD = ixp.declarerank1("Phi_dupD")
-    Pi_dupD = ixp.declarerank1("Pi_dupD")
+    # These are defined as centered derivatives here
+    # but they should be upstream in a fully nonlinear evolution
+    Phi_dD = ixp.declarerank1("Phi_dD")
+    Pi_dD = ixp.declarerank1("Pi_dD")
 
     # Scalar field mass
     mu_s = par.Cparameters("REAL", thismodule, ["mu_s"], 1.0)
@@ -55,9 +61,40 @@ def field_RHSs():
     Phi_rhs = - alpha * Pi
     for i in range(DIM):
         # Shift advection derivatives are upwinded
-        Phi_rhs += betaU[i] * Phi_dupD[i]
+        Phi_rhs += betaU[i] * Phi_dD[i]
 
     # RHS for the conjugate momentum Pi
+    # \partial_t \Pi = \alpha (- \gamma^{ij} \partial_j \partial_i \Phi
+    # + \gamma^{ij} \Gamma^k_{ji} \partial_k \Phi + K \Pi + \mu_s^2 \Phi)
+    # - \gamma^{ij} \partial_j \alpha \partial_i \Phi + \beta^i \partial_i \Phi
+
+    # # Term inside braces
+    # term_in_braces = mu_s**2 * Phi + trK * Pi
+
+    # # First sum inside braces: - \gamma^{ij} \partial_j \partial_i \Phi
+    # for i in range(DIM):
+    #     for j in range(DIM):
+    #         term_in_braces += - gammaUU[i][j] * Phi_dDD[i][j]
+
+    # # Second sum inside braces: \gamma^{ij} \Gamma^k_{ji} \partial_k \Phi
+    # for i in range(DIM):
+    #     for j in range(DIM):
+    #         for k in range(DIM):
+    #             term_in_braces += gammaUU[i][j] * GammaUDD[k][j][i] * Phi_dD[k]
+
+    # # Multiply term in braces by alpha
+    # Pi_rhs = term_in_braces * alpha
+
+    # # First term after braces
+    # for i in range(DIM):
+    #     for j in range(DIM):
+    #         Pi_rhs += - gammaUU[i][j] * alpha_dD[j] * Phi_dD[i]
+
+    # # Final term after braces
+    # for i in range(DIM):
+    #     Pi_rhs += betaU[i] * Pi_dD[i]
+
+    # THIS IS THE EXPRESSION IN TERMS OF THE CONFORMAL 3-METRIC GAMMABAR
     # \partial_t \Pi = \alpha (- e^{-4 \phi} \bar{\gamma}^{ij} \partial_i \partial_j \Phi +
     # e^{-4 \phi} \bar{\gamma}^{ij} \bar{\Gamma}^k_{ij} \partial_k \Phi -
     # 2 e^{-4 \phi} \bar{\gamma}^{ij} \partial_j \Phi \partial_i \phi + K \Pi + \mu_s^2 \Phi ) -
@@ -99,7 +136,7 @@ def field_RHSs():
     # Second term after braces: \beta^i \partial_i \Pi
     for i in range(DIM):
         # Shift advection derivatives are upwinded
-        Pi_rhs += betaU[i] * Pi_dupD[i]
+        Pi_rhs += betaU[i] * Pi_dD[i]
 
     # Pi_rhs = sp.simplify(Pi_rhs)
 
