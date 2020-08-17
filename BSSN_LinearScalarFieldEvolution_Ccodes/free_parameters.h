@@ -1,7 +1,7 @@
 
 // Set Black Hole mass and spin
-params.M = {M};
-params.chi = {chi};
+params.M = 1;
+params.chi = 0.99;
     
 // Set free-parameter values.
 
