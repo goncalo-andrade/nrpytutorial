@@ -67,6 +67,7 @@
 // Include basic functions needed to impose curvilinear
 // parity and boundary conditions.
 #include "boundary_conditions/CurviBC_include_Cfunctions.h"
+#include "boundary_conditions/apply_inner_parity_conditions.h"
 
 // Include function for enforcing detgammabar constraint.
 #include "enforce_detgammabar_constraint.h"
@@ -210,11 +211,11 @@ int main(int argc, const char *argv[]) {
     // Set up initial data to an exact solution
     initial_data(&params, xx, y_n_gfs);
 
-    // Apply boundary conditions, as initial data
+    // Apply inner parity conditions, as initial data
     // are sometimes ill-defined in ghost zones.
     // E.g., spherical initial data might not be
     // properly defined at points where r=-1.
-    apply_bcs_curvilinear(&params, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, y_n_gfs);
+    apply_inner_parity_conditions(&params, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, y_n_gfs);
     enforce_detgammabar_constraint(&rfmstruct, &params, y_n_gfs);
 
     // Start the timer, for keeping track of how fast the simulation is progressing.
