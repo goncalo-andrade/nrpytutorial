@@ -139,9 +139,10 @@ def scalar_field_test_ID():
     Phi = sp.simplify(Phi_t.subs(t, sp.sympify(0)))
 
     Pi_t = sp.diff(Phi_t, t)
-    for i in range(DIM):
-        Pi_t -= betaU[i] * sp.diff(Phi_t, coords[i])
-    Pi = - 1/alpha * Pi_t.subs(t, sp.sympify(0))
+    Pi = - Pi_t.subs(t, sp.sympify(0))
+    # for i in range(DIM):
+    #     Pi_t -= betaU[i] * sp.diff(Phi_t, coords[i])
+    # Pi = - 1/alpha * Pi_t.subs(t, sp.sympify(0))
     # Pi = sp.sympify(0)
 
     # This function replaces the spherical coordinates r, th, ph for the numerical grid xx0, xx1, xx2

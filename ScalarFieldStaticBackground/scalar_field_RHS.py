@@ -95,9 +95,9 @@ def field_RHSs():
     #     Pi_rhs += betaU[i] * Pi_dD[i]
 
     # THIS IS THE EXPRESSION IN TERMS OF THE CONFORMAL 3-METRIC GAMMABAR
-    # \partial_t \Pi = \alpha (- e^{-4 \phi} \bar{\gamma}^{ij} \partial_i \partial_j \Phi +
+    # \partial_t \Pi = \alpha \left(- e^{-4 \phi} \bar{\gamma}^{ij} \partial_i \partial_j \Phi +
     # e^{-4 \phi} \bar{\gamma}^{ij} \bar{\Gamma}^k_{ij} \partial_k \Phi -
-    # 2 e^{-4 \phi} \bar{\gamma}^{ij} \partial_j \Phi \partial_i \phi + K \Pi + \mu_s^2 \Phi ) -
+    # 2 e^{-4 \phi} \bar{\gamma}^{ij} \partial_j \Phi \partial_i \phi + K \Pi + \mu_s^2 \Phi \right) -
     # e^{-4 \phi} \bar{\gamma}^{ij} \partial_j \alpha \partial_i \Phi + \beta^i \partial_i \Pi
 
     # Scalar part inside braces: K \Pi + \mu_s^2 \Phi

@@ -218,7 +218,7 @@ int main(int argc, const char *argv[])
     // Time parameters
 
     // Set final time so that the approximate outer BCs don't contaminate the data at the origin
-    const REAL t_final = t_initial + 100.0;
+    const REAL t_final = t_initial + 500.0;
 
     // Timestep based on the CFL condition
     REAL dt = find_timestep(&params, xx);

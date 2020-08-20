@@ -37,4 +37,8 @@ REAL RMAX;
 REAL M;
 REAL chi;
 REAL eta;
+REAL mu_s;
+REAL A;
+REAL r0;
+REAL w;
 } paramstruct;

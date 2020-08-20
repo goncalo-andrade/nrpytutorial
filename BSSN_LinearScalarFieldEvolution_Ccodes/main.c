@@ -80,11 +80,17 @@
 // Set the generic driver function for setting up BSSN initial data
 #include "initial_data.h"
 
+// Declare and define function for setting up the initial data for the scalar field
+#include "fields_initial_data.h"
+
 // Declare function for evaluating Hamiltonian constraint (diagnostic)
 #include "Hamiltonian_constraint.h"
 
 // Declare rhs_eval function, which evaluates BSSN RHSs
 #include "rhs_eval.h"
+
+// Declare fields_rhs_eval function, which evaluates the scalar field RHSs
+#include "fields_rhs_eval.h"
 
 // Declare Ricci_eval function, which evaluates Ricci tensor
 #include "Ricci_eval.h"
@@ -170,7 +176,7 @@ int main(int argc, const char *argv[]) {
     const int Nxx_plus_2NGHOSTS_tot = Nxx_plus_2NGHOSTS0 * Nxx_plus_2NGHOSTS1 * Nxx_plus_2NGHOSTS2;
 
     // Time coordinate parameters
-    const REAL t_final = domain_size; /* Final time is set so that at t=t_final,
+    const REAL t_final = 100.0; /* Final time is set so that at t=t_final,
                                         * data at the origin have not been corrupted
                                         * by the approximate outer boundary condition */
 
@@ -180,7 +186,7 @@ int main(int argc, const char *argv[]) {
     int N_final = (int)(t_final / dt + 0.5); // The number of points in time.
                                              // Add 0.5 to account for C rounding down
                                              // typecasts to integers.
-    int output_every_N = (int)((REAL)N_final / 10.0);
+    int output_every_N = (int)((REAL)N_final / 50.0);
     if (output_every_N == 0)
         output_every_N = 1;
 
@@ -210,6 +216,7 @@ int main(int argc, const char *argv[]) {
 
     // Set up initial data to an exact solution
     initial_data(&params, xx, y_n_gfs);
+    fields_initial_data(&params, xx, y_n_gfs);
 
     // Apply inner parity conditions, as initial data
     // are sometimes ill-defined in ghost zones.
@@ -239,25 +246,6 @@ int main(int argc, const char *argv[]) {
             // Evaluate Hamiltonian constraint violation
             Hamiltonian_constraint(&rfmstruct, &params, y_n_gfs, diagnostic_output_gfs);
 
-            // char filename[100];
-            // sprintf(filename, "out%d-%08d.txt", Nxx[0], n);
-            // FILE *out2D = fopen(filename, "w");
-            // LOOP_REGION(NGHOSTS, Nxx_plus_2NGHOSTS0 - NGHOSTS,
-            //             NGHOSTS, Nxx_plus_2NGHOSTS1 - NGHOSTS,
-            //             NGHOSTS, Nxx_plus_2NGHOSTS2 - NGHOSTS)
-            // {
-            //     const int idx = IDX3S(i0, i1, i2);
-            //     REAL xx0 = xx[0][i0];
-            //     REAL xx1 = xx[1][i1];
-            //     REAL xx2 = xx[2][i2];
-            //     REAL xCart[3];
-            //     xxCart(&params, xx, i0, i1, i2, xCart);
-            //     fprintf(out2D, "%e %e %e %e\n",
-            //             xCart[1], xCart[2],
-            //             y_n_gfs[IDX4ptS(CFGF, idx)], log10(fabs(diagnostic_output_gfs[IDX4ptS(HGF, idx)])));
-            // }
-            // fclose(out2D);
-
             char filename[100];
             sprintf(filename, "out%d-%08d.txt", Nxx[0], n);
             FILE *out = fopen(filename, "w");
@@ -269,7 +257,9 @@ int main(int argc, const char *argv[]) {
                 REAL xx0 = xx[0][i0];
                 REAL xx1 = xx[1][i1];
                 REAL xx2 = xx[2][i2];
-                fprintf(out, "%e %e %e %e %e\n", xx0, xx1, xx2, y_n_gfs[IDX4ptS(CFGF, idx)], diagnostic_output_gfs[IDX4ptS(HGF, idx)]);
+                fprintf(out, "%e %e %e %e %e %e %e\n",
+                        xx0, xx1, xx2, y_n_gfs[IDX4ptS(CFGF, idx)], diagnostic_output_gfs[IDX4ptS(HGF, idx)],
+                        y_n_gfs[IDX4ptS(PHIGF, idx)], y_n_gfs[IDX4ptS(PIGF, idx)]);
             }
 
             fclose(out);
@@ -286,29 +276,8 @@ int main(int argc, const char *argv[]) {
             // Evaluate Hamiltonian constraint violation
             Hamiltonian_constraint(&rfmstruct, &params, y_n_gfs, diagnostic_output_gfs);
 
-            // char filename[100];
-            // sprintf(filename, "out%d.txt", Nxx[0]);
-            // FILE *out2D = fopen(filename, "w");
-            // const int i0MIN = NGHOSTS; // In spherical, r=Delta r/2.
-            // const int i1mid = Nxx_plus_2NGHOSTS1 / 2;
-            // const int i2mid = Nxx_plus_2NGHOSTS2 / 2;
-            // LOOP_REGION(NGHOSTS, Nxx_plus_2NGHOSTS0 - NGHOSTS,
-            //             NGHOSTS, Nxx_plus_2NGHOSTS1 - NGHOSTS,
-            //             NGHOSTS, Nxx_plus_2NGHOSTS2 - NGHOSTS)
-            // {
-            //     REAL xx0 = xx[0][i0];
-            //     REAL xx1 = xx[1][i1];
-            //     REAL xx2 = xx[2][i2];
-            //     REAL xCart[3];
-            //     xxCart(&params, xx, i0, i1, i2, xCart);
-            //     int idx = IDX3S(i0, i1, i2);
-            //     fprintf(out2D, "%e %e %e %e\n", xCart[1], xCart[2], y_n_gfs[IDX4ptS(CFGF, idx)],
-            //             log10(fabs(diagnostic_output_gfs[IDX4ptS(HGF, idx)])));
-            // }
-            // fclose(out2D);
-
             char filename[100];
-            sprintf(filename, "out%d.txt", Nxx[0]);
+            sprintf(filename, "out%d-%08d.txt", Nxx[0], n);
             FILE *out = fopen(filename, "w");
             LOOP_REGION(NGHOSTS, Nxx_plus_2NGHOSTS0 - NGHOSTS,
                         NGHOSTS, Nxx_plus_2NGHOSTS1 - NGHOSTS,
@@ -318,7 +287,9 @@ int main(int argc, const char *argv[]) {
                 REAL xx0 = xx[0][i0];
                 REAL xx1 = xx[1][i1];
                 REAL xx2 = xx[2][i2];
-                fprintf(out, "%e %e %e %e %e\n", xx0, xx1, xx2, y_n_gfs[IDX4ptS(CFGF, idx)], diagnostic_output_gfs[IDX4ptS(HGF, idx)]);
+                fprintf(out, "%e %e %e %e %e %e %e\n",
+                        xx0, xx1, xx2, y_n_gfs[IDX4ptS(CFGF, idx)], diagnostic_output_gfs[IDX4ptS(HGF, idx)],
+                        y_n_gfs[IDX4ptS(PHIGF, idx)], y_n_gfs[IDX4ptS(PIGF, idx)]);
             }
 
             fclose(out);
