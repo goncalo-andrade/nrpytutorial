@@ -81,7 +81,7 @@
 #include "initial_data.h"
 
 // Declare and define function for setting up the initial data for the scalar field
-#include "fields_initial_data.h"
+// #include "fields_initial_data.h"
 
 // Declare function for evaluating Hamiltonian constraint (diagnostic)
 #include "Hamiltonian_constraint.h"
@@ -90,7 +90,7 @@
 #include "rhs_eval.h"
 
 // Declare fields_rhs_eval function, which evaluates the scalar field RHSs
-#include "fields_rhs_eval.h"
+// #include "fields_rhs_eval.h"
 
 // Declare Ricci_eval function, which evaluates Ricci tensor
 #include "Ricci_eval.h"
@@ -176,7 +176,7 @@ int main(int argc, const char *argv[]) {
     const int Nxx_plus_2NGHOSTS_tot = Nxx_plus_2NGHOSTS0 * Nxx_plus_2NGHOSTS1 * Nxx_plus_2NGHOSTS2;
 
     // Time coordinate parameters
-    const REAL t_final = 100.0; /* Final time is set so that at t=t_final,
+    const REAL t_final = domain_size; /* Final time is set so that at t=t_final,
                                         * data at the origin have not been corrupted
                                         * by the approximate outer boundary condition */
 
@@ -186,7 +186,7 @@ int main(int argc, const char *argv[]) {
     int N_final = (int)(t_final / dt + 0.5); // The number of points in time.
                                              // Add 0.5 to account for C rounding down
                                              // typecasts to integers.
-    int output_every_N = (int)((REAL)N_final / 50.0);
+    int output_every_N = (int)((REAL)N_final / 10.0);
     if (output_every_N == 0)
         output_every_N = 1;
 
@@ -216,7 +216,7 @@ int main(int argc, const char *argv[]) {
 
     // Set up initial data to an exact solution
     initial_data(&params, xx, y_n_gfs);
-    fields_initial_data(&params, xx, y_n_gfs);
+    // fields_initial_data(&params, xx, y_n_gfs);
 
     // Apply inner parity conditions, as initial data
     // are sometimes ill-defined in ghost zones.
@@ -226,14 +226,14 @@ int main(int argc, const char *argv[]) {
     enforce_detgammabar_constraint(&rfmstruct, &params, y_n_gfs);
 
     // Start the timer, for keeping track of how fast the simulation is progressing.
-#ifdef __linux__ // Use high-precision timer in Linux.
-    struct timespec start, end;
-    clock_gettime(CLOCK_REALTIME, &start);
-#else // Resort to low-resolution, standards-compliant timer in non-Linux OSs
-    // http://www.cplusplus.com/reference/ctime/time/
-    time_t start_timer, end_timer;
-    time(&start_timer); // Resolution of one second...
-#endif
+// #ifdef __linux__ // Use high-precision timer in Linux.
+//     struct timespec start, end;
+//     clock_gettime(CLOCK_REALTIME, &start);
+// #else // Resort to low-resolution, standards-compliant timer in non-Linux OSs
+//     // http://www.cplusplus.com/reference/ctime/time/
+//     time_t start_timer, end_timer;
+//     time(&start_timer); // Resolution of one second...
+// #endif
 
     // Integrate the initial data forward in time using the chosen RK-like Method of
     // Lines timestepping algorithm, and output periodic simulation diagnostics
@@ -241,7 +241,7 @@ int main(int argc, const char *argv[]) {
     { // Main loop to progress forward in time.
 
         // Output 2D data file periodically, for visualization
-        if (n % 100 == 0)
+        if (n % output_every_N == 0)
         {
             // Evaluate Hamiltonian constraint violation
             Hamiltonian_constraint(&rfmstruct, &params, y_n_gfs, diagnostic_output_gfs);
@@ -257,9 +257,9 @@ int main(int argc, const char *argv[]) {
                 REAL xx0 = xx[0][i0];
                 REAL xx1 = xx[1][i1];
                 REAL xx2 = xx[2][i2];
-                fprintf(out, "%e %e %e %e %e %e %e\n",
+                fprintf(out, "%e %e %e %e %e %e\n",
                         xx0, xx1, xx2, y_n_gfs[IDX4ptS(CFGF, idx)], diagnostic_output_gfs[IDX4ptS(HGF, idx)],
-                        y_n_gfs[IDX4ptS(PHIGF, idx)], y_n_gfs[IDX4ptS(PIGF, idx)]);
+                        y_n_gfs[IDX4ptS(ALPHAGF, idx)]);
             }
 
             fclose(out);
@@ -287,9 +287,9 @@ int main(int argc, const char *argv[]) {
                 REAL xx0 = xx[0][i0];
                 REAL xx1 = xx[1][i1];
                 REAL xx2 = xx[2][i2];
-                fprintf(out, "%e %e %e %e %e %e %e\n",
+                fprintf(out, "%e %e %e %e %e %e\n",
                         xx0, xx1, xx2, y_n_gfs[IDX4ptS(CFGF, idx)], diagnostic_output_gfs[IDX4ptS(HGF, idx)],
-                        y_n_gfs[IDX4ptS(PHIGF, idx)], y_n_gfs[IDX4ptS(PIGF, idx)]);
+                        y_n_gfs[IDX4ptS(ALPHAGF, idx)]);
             }
 
             fclose(out);
@@ -297,30 +297,30 @@ int main(int argc, const char *argv[]) {
         // Progress indicator printing to stderr
 
         // Measure average time per iteration
-#ifdef __linux__ // Use high-precision timer in Linux.
-        clock_gettime(CLOCK_REALTIME, &end);
-        const long long unsigned int time_in_ns = 1000000000L * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
-#else // Resort to low-resolution, standards-compliant timer in non-Linux OSs
-        time(&end_timer);                                                 // Resolution of one second...
-        REAL time_in_ns = difftime(end_timer, start_timer) * 1.0e9 + 0.5; // Round up to avoid divide-by-zero.
-#endif
-        const REAL s_per_iteration_avg = ((REAL)time_in_ns / (REAL)n) / 1.0e9;
+// #ifdef __linux__ // Use high-precision timer in Linux.
+//         clock_gettime(CLOCK_REALTIME, &end);
+//         const long long unsigned int time_in_ns = 1000000000L * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
+// #else // Resort to low-resolution, standards-compliant timer in non-Linux OSs
+//         time(&end_timer);                                                 // Resolution of one second...
+//         REAL time_in_ns = difftime(end_timer, start_timer) * 1.0e9 + 0.5; // Round up to avoid divide-by-zero.
+// #endif
+//         const REAL s_per_iteration_avg = ((REAL)time_in_ns / (REAL)n) / 1.0e9;
 
-        const int iterations_remaining = N_final - n;
-        const REAL time_remaining_in_mins = s_per_iteration_avg * (REAL)iterations_remaining / 60.0;
+//         const int iterations_remaining = N_final - n;
+//         const REAL time_remaining_in_mins = s_per_iteration_avg * (REAL)iterations_remaining / 60.0;
 
-        const REAL num_RHS_pt_evals = (REAL)(Nxx[0] * Nxx[1] * Nxx[2]) * 4.0 * (REAL)n; // 4 RHS evals per gridpoint for RK4
-        const REAL RHS_pt_evals_per_sec = num_RHS_pt_evals / ((REAL)time_in_ns / 1.0e9);
+//         const REAL num_RHS_pt_evals = (REAL)(Nxx[0] * Nxx[1] * Nxx[2]) * 4.0 * (REAL)n; // 4 RHS evals per gridpoint for RK4
+//         const REAL RHS_pt_evals_per_sec = num_RHS_pt_evals / ((REAL)time_in_ns / 1.0e9);
 
-        // Output simulation progress to stderr
-        if (n % 10 == 0)
-        {
-            fprintf(stderr, "%c[2K", 27);                                                          // Clear the line
-            fprintf(stderr, "It: %d t=%.2f dt=%.2e | %.1f%%; ETA %.0f s | t/h %.2f | gp/s %.2e\r", // \r is carriage return, move cursor to the beginning of the line
-                    n, n * (double)dt, (double)dt, (double)(100.0 * (REAL)n / (REAL)N_final),
-                    (double)time_remaining_in_mins * 60, (double)(dt * 3600.0 / s_per_iteration_avg), (double)RHS_pt_evals_per_sec);
-            fflush(stderr); // Flush the stderr buffer
-        }                   // End progress indicator if(n % 10 == 0)
+//         // Output simulation progress to stderr
+//         if (n % 10 == 0)
+//         {
+//             fprintf(stderr, "%c[2K", 27);                                                          // Clear the line
+//             fprintf(stderr, "It: %d t=%.2f dt=%.2e | %.1f%%; ETA %.0f s | t/h %.2f | gp/s %.2e\r", // \r is carriage return, move cursor to the beginning of the line
+//                     n, n * (double)dt, (double)dt, (double)(100.0 * (REAL)n / (REAL)N_final),
+//                     (double)time_remaining_in_mins * 60, (double)(dt * 3600.0 / s_per_iteration_avg), (double)RHS_pt_evals_per_sec);
+//             fflush(stderr); // Flush the stderr buffer
+//         }                   // End progress indicator if(n % 10 == 0)
     }                       // End main loop to progress forward in time.
     fprintf(stderr, "\n");  // Clear the final line of output from progress indicator.
 

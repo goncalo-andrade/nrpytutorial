@@ -14,7 +14,6 @@ const REAL RMAX = params.RMAX;
 const REAL M = params.M;
 const REAL chi = params.chi;
 const REAL eta = params.eta;
-const REAL mu_s = params.mu_s;
 const REAL A = params.A;
 const REAL r0 = params.r0;
 const REAL w = params.w;

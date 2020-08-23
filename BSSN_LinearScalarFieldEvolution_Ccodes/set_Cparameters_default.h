@@ -36,7 +36,6 @@ params.RMAX = 10.0;
 params.M = 1.0;
 params.chi = 0.99;
 params.eta = 2.0;
-params.mu_s = 0.0;
 params.A = 1.0;
 params.r0 = 5.0;
 params.w = 2.0;
