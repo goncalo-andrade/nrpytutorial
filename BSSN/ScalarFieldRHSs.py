@@ -54,6 +54,7 @@ def ScalarFieldRHSs():
     Pi_dupD = ixp.declarerank1("Pi_dupD")
 
     # Define the scalar field mass as a C parameter
+    global mu_s
     mu_s = par.Cparameters("REAL", thismodule, ["mu_s"], 0.0)
 
     # Declare global variables for the RHS expressions
