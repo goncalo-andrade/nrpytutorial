@@ -14,7 +14,7 @@ void set_Nxx_dxx_invdx_params__and__xx(const int EigenCoord, const int Nxx[3],
     REAL xxmin[3],xxmax[3];
     if(EigenCoord == 0) {
         xxmin[0] = 0;
-        xxmax[0] = RMAX;
+        xxmax[0] = 1;
         xxmin[1] = 0;
         xxmax[1] = M_PI;
         xxmin[2] = -M_PI;

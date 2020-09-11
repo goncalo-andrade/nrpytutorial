@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
 #include <stdint.h> // Needed for Windows GCC 6.x compatibility
 #ifndef M_PI
 #define M_PI 3.141592653589793238462643383279502884L
@@ -81,7 +82,7 @@
 #include "initial_data.h"
 
 // Declare and define function for setting up the initial data for the scalar field
-// #include "fields_initial_data.h"
+#include "fields_initial_data.h"
 
 // Declare function for evaluating Hamiltonian constraint (diagnostic)
 #include "Hamiltonian_constraint.h"
@@ -90,10 +91,78 @@
 #include "rhs_eval.h"
 
 // Declare fields_rhs_eval function, which evaluates the scalar field RHSs
-// #include "fields_rhs_eval.h"
+#include "fields_rhs_eval.h"
 
 // Declare Ricci_eval function, which evaluates Ricci tensor
 #include "Ricci_eval.h"
+
+void print_all_gfs(const paramstruct *restrict params, const REAL *restrict gfs, const REAL time) {
+#include "set_Cparameters.h"
+
+    // Write the new starting time to free_parameters.h
+    FILE *freeparams = fopen("../../free_parameters.h", "a");
+    fprintf(freeparams, "t_initial = %.5f;\n", time);
+    fclose(freeparams);
+
+    #pragma omp parallel for
+    for (int which_gf = 0; which_gf < NUM_EVOL_GFS; which_gf++) {
+
+        char filename[50];
+        sprintf(filename, "checkpoint_data/gf_%d_t_%.5f.txt", which_gf, time);
+        FILE *out_test;
+        if (!(out_test = fopen(filename, "w+")))
+        {
+
+            fprintf(stderr, "WARNING: could not open file %s. Make sure the checkpoint_data directory was created.\n", filename);
+            fprintf(stderr, "         Checkpoint data will be saved in the current directory.\n");
+            fprintf(stderr, "         Move it manually to checkpoint_data, otherwise it won't be read in the next run.\n");
+
+            sprintf(filename, "gf_%d_t_%.5f.txt", which_gf, time);
+        }
+
+        FILE *out = fopen(filename, "w+");
+
+        for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++) {
+            for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++) {
+                for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++) {
+                    fprintf(out, "%e\n", gfs[IDX4S(which_gf, i0, i1, i2)]);
+                }
+            }
+        }
+    }
+
+}
+
+void initial_data_from_file(const paramstruct *restrict params, REAL * restrict gfs, const REAL t_initial) {
+#include "set_Cparameters.h"
+
+    #pragma omp parallel for
+    for (int which_gf = 0; which_gf < NUM_EVOL_GFS; which_gf++) {
+
+        char filename[50];
+        sprintf(filename, "checkpoint_data/gf_%d_t_%.5f.txt", which_gf, t_initial);
+        FILE *in;
+        if (in = fopen(filename, "r+")) {
+
+            for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++) {
+                for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++) {
+                    for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++) {
+                        fscanf(in, "%lf", &gfs[IDX4S(which_gf, i0, i1, i2)]);
+                    }
+                }
+            }
+
+            fclose(in);
+
+        } else {
+            fprintf(stderr, "ERROR: could not open file %s.\n", filename);
+            fprintf(stderr, "       Make sure the final time of the last run is correct,\n");
+            fprintf(stderr, "       and that the checkpoint files are inside the checkpoind_data directory.\n");
+            exit(1);
+        }
+    }
+
+}
 
 // main() function:
 // Step 0: Read command-line input, set up grid structure, allocate memory for gridfunctions, set up coordinates
@@ -113,8 +182,14 @@ int main(int argc, const char *argv[]) {
     paramstruct params;
 #include "set_Cparameters_default.h"
 
+    // Set default initial time to 0
+    REAL t_initial = 0;
+
     // Read command-line input, error out if nonconformant
-    if ((argc != 4 && argc != 5) || atoi(argv[1]) < NGHOSTS || atoi(argv[2]) < NGHOSTS || atoi(argv[3]) < 2 /* FIXME; allow for axisymmetric sims */)
+    // Expected arguments: Nxx0 Nxx1 Nxx2 [CFL_FACTOR] [t_initial] [A] [r0] [w] [mu_s]
+    // Arguments in brackets are optional
+
+    if (argc < 4 || atoi(argv[1]) < NGHOSTS || atoi(argv[2]) < NGHOSTS || atoi(argv[3]) < 2 /* FIXME; allow for axisymmetric sims */)
     {
         fprintf(stderr, "Error: Expected three command-line arguments: ./exec Nx0 Nx1 Nx2,\n");
         fprintf(stderr, "where Nx[0,1,2] is the number of grid points in the 0, 1, and 2 directions.\n");
@@ -130,6 +205,79 @@ int main(int argc, const char *argv[]) {
             fprintf(stderr, "         This will generally only be stable if the simulation is purely axisymmetric\n");
             fprintf(stderr, "         However, Nx2 was set to %d>2, which implies a non-axisymmetric simulation\n", atoi(argv[3]));
         }
+        fprintf(stderr, "WARNING: No initial time or scalar field parameters provided. Defaults will be used instead.\n");
+    }
+    if (argc == 6) {
+        // Check CFL factor
+        CFL_FACTOR = strtod(argv[4], NULL);
+        if (CFL_FACTOR > 0.5 && atoi(argv[3]) != 2)
+        {
+            fprintf(stderr, "WARNING: CFL_FACTOR was set to %e, which is > 0.5.\n", CFL_FACTOR);
+            fprintf(stderr, "         This will generally only be stable if the simulation is purely axisymmetric\n");
+            fprintf(stderr, "         However, Nx2 was set to %d>2, which implies a non-axisymmetric simulation\n", atoi(argv[3]));
+        }
+        // Check initial time
+        REAL t_initial = strtod(argv[5], NULL);
+        if (t_initial < 0) {
+            fprintf(stderr, "ERROR: Initial simulation time was chosen to be %f < 0.\n"t_init);
+            fprintf(stderr, "       Please select a time that is greater than or equal to 0.\n");
+            exit(1);
+        }
+        fprintf(stderr, "WARNING: No scalar field parameters provided. Defaults will be used instead.\n");
+    }
+    if (argc == 10) {
+        // Check CFL factor
+        CFL_FACTOR = strtod(argv[4], NULL);
+        if (CFL_FACTOR > 0.5 && atoi(argv[3]) != 2)
+        {
+            fprintf(stderr, "WARNING: CFL_FACTOR was set to %e, which is > 0.5.\n", CFL_FACTOR);
+            fprintf(stderr, "         This will generally only be stable if the simulation is purely axisymmetric\n");
+            fprintf(stderr, "         However, Nx2 was set to %d>2, which implies a non-axisymmetric simulation\n", atoi(argv[3]));
+        }
+        // Check initial time
+        t_initial = strtod(argv[5], NULL);
+        if (t_initial < 0) {
+            fprintf(stderr, "ERROR: Initial simulation time was chosen to be %f < 0.\n"t_init);
+            fprintf(stderr, "       Please select a time that is greater than or equal to 0.\n");
+            exit(1);
+        }
+        // Check if A is non-zero
+        REAL A = strtod(argv[6], NULL);
+        if (A == 0) {
+            fprintf(stderr, "ERROR: Scalar field amplitude must not be zero.\n");
+            exit(1);
+        }
+        // Check if r0 is non-negative
+        REAL r0 = strtod(argv[7], NULL);
+        if (r0 < 0) {
+            fprintf(stderr, "WARNING: R0 was set to %e, which is < 0. This must be a non-negative number.\n", r0);
+            fprintf(stderr, "         The symmetric of the number you provided will be used instead.\n");
+            r0 = -r0;
+        }
+        // Check if w is non-zero
+        REAL w = strtod(argv[8], NULL);
+        if (w == 0) {
+            fprintf(stderr, "ERROR: Scalar field gaussian width must not be zero.\n");
+            exit(1);
+        }
+        // Check if mu_s is non-negative
+        REAL mu_s = strtod(argv[9], NULL);
+        if (mu_s < 0) {
+            fprintf(stderr, "ERROR: mu_s was set to %e, which is < 0. This must be a non-negative number.\n", mu_s);
+            exit(1);
+        }
+
+        // Set the scalar field parameters
+        params.A = A;
+        params.r0 = r0;
+        params.w = w;
+        params.mu_s = mu_s;
+    }
+    // If 5 < argc < 9, not enough parameters provided
+    if (argc > 6 && argc < 10) {
+        fprintf(stderr, "ERROR: not enough scalar field parameters provided.\n");
+        fprintf(stderr, "       Expected argument format is Nxx0 Nxx1 Nxx2 [CFL_FACTOR] [A] [r0] [w] [mu_s]\n.");
+        exit(1);
     }
     // Set up numerical grid structure, first in space...
     const int Nxx[3] = {atoi(argv[1]), atoi(argv[2]), atoi(argv[3])};
@@ -176,17 +324,17 @@ int main(int argc, const char *argv[]) {
     const int Nxx_plus_2NGHOSTS_tot = Nxx_plus_2NGHOSTS0 * Nxx_plus_2NGHOSTS1 * Nxx_plus_2NGHOSTS2;
 
     // Time coordinate parameters
-    const REAL t_final = domain_size; /* Final time is set so that at t=t_final,
-                                        * data at the origin have not been corrupted
-                                        * by the approximate outer boundary condition */
+    const REAL t_final = t_initial + sim_time;     /* Final time is set so that at t=t_final,
+                                                    * data at the origin have not been corrupted
+                                                    * by the approximate outer boundary condition */
 
     // Set timestep based on smallest proper distance between gridpoints and CFL factor
     REAL dt = find_timestep(&params, xx);
     //fprintf(stderr,"# Timestep set to = %e\n",(double)dt);
-    int N_final = (int)(t_final / dt + 0.5); // The number of points in time.
+    int N_final = (int)(sim_time / dt + 0.5); // The number of points in time.
                                              // Add 0.5 to account for C rounding down
                                              // typecasts to integers.
-    int output_every_N = (int)((REAL)N_final / 10.0);
+    int output_every_N = (int)((REAL)N_final / N_outputs);
     if (output_every_N == 0)
         output_every_N = 1;
 
@@ -214,9 +362,14 @@ int main(int argc, const char *argv[]) {
 #include "rfm_files/rfm_struct__define.h"
     }
 
-    // Set up initial data to an exact solution
-    initial_data(&params, xx, y_n_gfs);
-    // fields_initial_data(&params, xx, y_n_gfs);
+    if (t_initial == 0) {
+        // Set up initial data to an exact solution
+        initial_data(&params, xx, y_n_gfs);
+        fields_initial_data(&params, xx, y_n_gfs);
+    } else {
+        // Set up initial data from last run data
+        initial_data_from_file(&params, y_n_gfs, t_initial);
+    }
 
     // Apply inner parity conditions, as initial data
     // are sometimes ill-defined in ghost zones.
@@ -225,15 +378,38 @@ int main(int argc, const char *argv[]) {
     apply_inner_parity_conditions(&params, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, y_n_gfs);
     enforce_detgammabar_constraint(&rfmstruct, &params, y_n_gfs);
 
+    // Print evolution parameters to command line on the first evolution only
+    if (t_initial == 0) {
+
+        FILE *params_file = fopen("run_params.txt", "w");
+
+        fprintf(params_file, "Black hole mass:                 %f\n", params.M);
+        fprintf(params_file, "Black hole spin:                 %f\n", params.chi);
+        fprintf(params_file, "Scalar field mass:               %f\n", params.mu_s);
+        fprintf(params_file, "Scalar field gaussian amplitude: %f\n", params.A);
+        fprintf(params_file, "Scalar field gaussian centre:    %f\n", params.r0);
+        fprintf(params_file, "Scalar field gaussian width:     %f\n", params.w);
+        fprintf(params_file, "Coordinate system:               %s\n", coord_system);
+        if (strcmp(coord_system, "Spherical") == 0)
+        {
+            fprintf(params_file, "RMAX =                           %f\n", params.RMAX);
+        // } else if (strcmp(coord_system, "SinhSpherical") == 0) {
+        //     fprintf(params_file, "AMPL =                           %f\n", params.AMPL);
+        //     fprintf(params_file, "SINHW =                          %f\n", params.SINHW);
+        }
+
+        fclose(params_file);
+    }
+
     // Start the timer, for keeping track of how fast the simulation is progressing.
-// #ifdef __linux__ // Use high-precision timer in Linux.
-//     struct timespec start, end;
-//     clock_gettime(CLOCK_REALTIME, &start);
-// #else // Resort to low-resolution, standards-compliant timer in non-Linux OSs
-//     // http://www.cplusplus.com/reference/ctime/time/
-//     time_t start_timer, end_timer;
-//     time(&start_timer); // Resolution of one second...
-// #endif
+#ifdef __linux__ // Use high-precision timer in Linux.
+    struct timespec start, end;
+    clock_gettime(CLOCK_REALTIME, &start);
+#else // Resort to low-resolution, standards-compliant timer in non-Linux OSs
+    // http://www.cplusplus.com/reference/ctime/time/
+    time_t start_timer, end_timer;
+    time(&start_timer); // Resolution of one second...
+#endif
 
     // Integrate the initial data forward in time using the chosen RK-like Method of
     // Lines timestepping algorithm, and output periodic simulation diagnostics
@@ -246,8 +422,10 @@ int main(int argc, const char *argv[]) {
             // Evaluate Hamiltonian constraint violation
             Hamiltonian_constraint(&rfmstruct, &params, y_n_gfs, diagnostic_output_gfs);
 
+            REAL current_t = n * dt + t_initial;
+
             char filename[100];
-            sprintf(filename, "out%d-%08d.txt", Nxx[0], n);
+            sprintf(filename, "out_%.5f.txt", current_t);
             FILE *out = fopen(filename, "w");
             LOOP_REGION(NGHOSTS, Nxx_plus_2NGHOSTS0 - NGHOSTS,
                         NGHOSTS, Nxx_plus_2NGHOSTS1 - NGHOSTS,
@@ -257,9 +435,9 @@ int main(int argc, const char *argv[]) {
                 REAL xx0 = xx[0][i0];
                 REAL xx1 = xx[1][i1];
                 REAL xx2 = xx[2][i2];
-                fprintf(out, "%e %e %e %e %e %e\n",
-                        xx0, xx1, xx2, y_n_gfs[IDX4ptS(CFGF, idx)], diagnostic_output_gfs[IDX4ptS(HGF, idx)],
-                        y_n_gfs[IDX4ptS(ALPHAGF, idx)]);
+                fprintf(out, "%e %e %e %e %e %e %e %e\n",
+                        xx0, xx1, xx2, y_n_gfs[IDX4ptS(ALPHAGF, idx)], y_n_gfs[IDX4ptS(CFGF, idx)], diagnostic_output_gfs[IDX4ptS(HGF, idx)],
+                        y_n_gfs[IDX4ptS(PHIGF, idx)], y_n_gfs[IDX4ptS(PIGF, idx)]);
             }
 
             fclose(out);
@@ -268,6 +446,7 @@ int main(int argc, const char *argv[]) {
         // Step forward one timestep (t -> t+dt) in time using
         // chosen RK-like MoL timestepping algorithm
 #include "MoLtimestepping/RK_MoL.h"
+        // meter_alpha_a_pata(&params, y_n_gfs);
 
         // If t=t_final, output conformal factor & Hamiltonian
         // constraint violation to 2D data file
@@ -276,8 +455,10 @@ int main(int argc, const char *argv[]) {
             // Evaluate Hamiltonian constraint violation
             Hamiltonian_constraint(&rfmstruct, &params, y_n_gfs, diagnostic_output_gfs);
 
+            REAL current_t = n * dt + t_initial;
+
             char filename[100];
-            sprintf(filename, "out%d-%08d.txt", Nxx[0], n);
+            sprintf(filename, "out_%.5f.txt", current_t);
             FILE *out = fopen(filename, "w");
             LOOP_REGION(NGHOSTS, Nxx_plus_2NGHOSTS0 - NGHOSTS,
                         NGHOSTS, Nxx_plus_2NGHOSTS1 - NGHOSTS,
@@ -287,40 +468,43 @@ int main(int argc, const char *argv[]) {
                 REAL xx0 = xx[0][i0];
                 REAL xx1 = xx[1][i1];
                 REAL xx2 = xx[2][i2];
-                fprintf(out, "%e %e %e %e %e %e\n",
-                        xx0, xx1, xx2, y_n_gfs[IDX4ptS(CFGF, idx)], diagnostic_output_gfs[IDX4ptS(HGF, idx)],
-                        y_n_gfs[IDX4ptS(ALPHAGF, idx)]);
+                fprintf(out, "%e %e %e %e %e %e %e %e\n",
+                        xx0, xx1, xx2, y_n_gfs[IDX4ptS(ALPHAGF, idx)], y_n_gfs[IDX4ptS(CFGF, idx)], diagnostic_output_gfs[IDX4ptS(HGF, idx)],
+                        y_n_gfs[IDX4ptS(PHIGF, idx)], y_n_gfs[IDX4ptS(PIGF, idx)]);
             }
 
             fclose(out);
+
+            // Print all gridfunctions to files
+            print_all_gfs(&params, y_n_gfs, current_t);
         }
         // Progress indicator printing to stderr
 
         // Measure average time per iteration
-// #ifdef __linux__ // Use high-precision timer in Linux.
-//         clock_gettime(CLOCK_REALTIME, &end);
-//         const long long unsigned int time_in_ns = 1000000000L * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
-// #else // Resort to low-resolution, standards-compliant timer in non-Linux OSs
-//         time(&end_timer);                                                 // Resolution of one second...
-//         REAL time_in_ns = difftime(end_timer, start_timer) * 1.0e9 + 0.5; // Round up to avoid divide-by-zero.
-// #endif
-//         const REAL s_per_iteration_avg = ((REAL)time_in_ns / (REAL)n) / 1.0e9;
+#ifdef __linux__ // Use high-precision timer in Linux.
+        clock_gettime(CLOCK_REALTIME, &end);
+        const long long unsigned int time_in_ns = 1000000000L * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
+#else // Resort to low-resolution, standards-compliant timer in non-Linux OSs
+        time(&end_timer);                                                 // Resolution of one second...
+        REAL time_in_ns = difftime(end_timer, start_timer) * 1.0e9 + 0.5; // Round up to avoid divide-by-zero.
+#endif
+        const REAL s_per_iteration_avg = ((REAL)time_in_ns / (REAL)n) / 1.0e9;
 
-//         const int iterations_remaining = N_final - n;
-//         const REAL time_remaining_in_mins = s_per_iteration_avg * (REAL)iterations_remaining / 60.0;
+        const int iterations_remaining = N_final - n;
+        const REAL time_remaining_in_mins = s_per_iteration_avg * (REAL)iterations_remaining / 60.0;
 
-//         const REAL num_RHS_pt_evals = (REAL)(Nxx[0] * Nxx[1] * Nxx[2]) * 4.0 * (REAL)n; // 4 RHS evals per gridpoint for RK4
-//         const REAL RHS_pt_evals_per_sec = num_RHS_pt_evals / ((REAL)time_in_ns / 1.0e9);
+        const REAL num_RHS_pt_evals = (REAL)(Nxx[0] * Nxx[1] * Nxx[2]) * 4.0 * (REAL)n; // 4 RHS evals per gridpoint for RK4
+        const REAL RHS_pt_evals_per_sec = num_RHS_pt_evals / ((REAL)time_in_ns / 1.0e9);
 
-//         // Output simulation progress to stderr
-//         if (n % 10 == 0)
-//         {
-//             fprintf(stderr, "%c[2K", 27);                                                          // Clear the line
-//             fprintf(stderr, "It: %d t=%.2f dt=%.2e | %.1f%%; ETA %.0f s | t/h %.2f | gp/s %.2e\r", // \r is carriage return, move cursor to the beginning of the line
-//                     n, n * (double)dt, (double)dt, (double)(100.0 * (REAL)n / (REAL)N_final),
-//                     (double)time_remaining_in_mins * 60, (double)(dt * 3600.0 / s_per_iteration_avg), (double)RHS_pt_evals_per_sec);
-//             fflush(stderr); // Flush the stderr buffer
-//         }                   // End progress indicator if(n % 10 == 0)
+        // Output simulation progress to stderr
+        if (n % 10 == 0)
+        {
+            fprintf(stderr, "%c[2K", 27);                                                          // Clear the line
+            fprintf(stderr, "It: %d t=%.2f dt=%.2e | %.1f%%; ETA %.0f s | t/h %.2f | gp/s %.2e\r", // \r is carriage return, move cursor to the beginning of the line
+                    n, t_initial + n * (double)dt, (double)dt, (double)(100.0 * (REAL)n / (REAL)N_final),
+                    (double)time_remaining_in_mins * 60, (double)(dt * 3600.0 / s_per_iteration_avg), (double)RHS_pt_evals_per_sec);
+            fflush(stderr); // Flush the stderr buffer
+        }                   // End progress indicator if(n % 10 == 0)
     }                       // End main loop to progress forward in time.
     fprintf(stderr, "\n");  // Clear the final line of output from progress indicator.
 

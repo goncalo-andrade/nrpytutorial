@@ -23,19 +23,20 @@ void enforce_detgammabar_constraint(const rfm_struct *restrict rfmstruct,const p
                    /*
                     * NRPy+ Finite Difference Code Generation, Step 2 of 2: Evaluate SymPy expressions and write to main memory:
                     */
-                   const double FDPart3_0 = hDD00 + 1;
+                   const double FDPart3_0 = ((f0_of_xx0__D0)*(f0_of_xx0__D0));
                    const double FDPart3_2 = ((f0_of_xx0)*(f0_of_xx0)*(f0_of_xx0)*(f0_of_xx0))*((f1_of_xx1)*(f1_of_xx1));
-                   const double FDPart3_3 = ((f0_of_xx0)*(f0_of_xx0));
-                   const double FDPart3_4 = FDPart3_3*hDD11 + FDPart3_3;
-                   const double FDPart3_5 = FDPart3_3*((f1_of_xx1)*(f1_of_xx1));
-                   const double FDPart3_6 = FDPart3_5*hDD22 + FDPart3_5;
-                   const double FDPart3_7 = cbrt(fabs(FDPart3_2)/(-FDPart3_0*FDPart3_2*((hDD12)*(hDD12)) + FDPart3_0*FDPart3_4*FDPart3_6 + 2*FDPart3_2*hDD01*hDD02*hDD12 - FDPart3_3*FDPart3_6*((hDD01)*(hDD01)) - FDPart3_4*FDPart3_5*((hDD02)*(hDD02))));
-                   in_gfs[IDX4S(HDD00GF, i0, i1, i2)] = FDPart3_0*FDPart3_7 - 1;
-                   in_gfs[IDX4S(HDD01GF, i0, i1, i2)] = FDPart3_7*hDD01;
-                   in_gfs[IDX4S(HDD02GF, i0, i1, i2)] = FDPart3_7*hDD02;
-                   in_gfs[IDX4S(HDD11GF, i0, i1, i2)] = FDPart3_7*(hDD11 + 1) - 1;
-                   in_gfs[IDX4S(HDD12GF, i0, i1, i2)] = FDPart3_7*hDD12;
-                   in_gfs[IDX4S(HDD22GF, i0, i1, i2)] = FDPart3_7*(hDD22 + 1) - 1;
+                   const double FDPart3_4 = FDPart3_0*hDD00 + FDPart3_0;
+                   const double FDPart3_5 = ((f0_of_xx0)*(f0_of_xx0));
+                   const double FDPart3_6 = FDPart3_5*hDD11 + FDPart3_5;
+                   const double FDPart3_7 = FDPart3_5*((f1_of_xx1)*(f1_of_xx1));
+                   const double FDPart3_8 = FDPart3_7*hDD22 + FDPart3_7;
+                   const double FDPart3_9 = cbrt(fabs(FDPart3_0*FDPart3_2)/(2*FDPart3_0*FDPart3_2*hDD01*hDD02*hDD12 - FDPart3_0*FDPart3_5*FDPart3_8*((hDD01)*(hDD01)) - FDPart3_0*FDPart3_6*FDPart3_7*((hDD02)*(hDD02)) - FDPart3_2*FDPart3_4*((hDD12)*(hDD12)) + FDPart3_4*FDPart3_6*FDPart3_8));
+                   in_gfs[IDX4S(HDD00GF, i0, i1, i2)] = FDPart3_9*(hDD00 + 1) - 1;
+                   in_gfs[IDX4S(HDD01GF, i0, i1, i2)] = FDPart3_9*hDD01;
+                   in_gfs[IDX4S(HDD02GF, i0, i1, i2)] = FDPart3_9*hDD02;
+                   in_gfs[IDX4S(HDD11GF, i0, i1, i2)] = FDPart3_9*(hDD11 + 1) - 1;
+                   in_gfs[IDX4S(HDD12GF, i0, i1, i2)] = FDPart3_9*hDD12;
+                   in_gfs[IDX4S(HDD22GF, i0, i1, i2)] = FDPart3_9*(hDD22 + 1) - 1;
                 
             } // END LOOP: for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++)
         } // END LOOP: for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++)

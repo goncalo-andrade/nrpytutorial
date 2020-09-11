@@ -42,10 +42,12 @@ if(abs(FACEXi[0])==1 || i0+NGHOSTS >= Nxx_plus_2NGHOSTS0 || i0-NGHOSTS <= 0) {
 
 /*
  *  Original SymPy expressions:
- *  "[*_r = xx0,
- *    *_partial_i_f = fdD0]"
+ *  "[*_r = AMPL*(exp(xx0/SINHW) - exp(-xx0/SINHW))/(exp(1/SINHW) - exp(-1/SINHW)),
+ *    *_partial_i_f = SINHW*fdD0*(exp(2/SINHW) - 1)*exp((xx0 - 1)/SINHW)/(AMPL*(exp(2*xx0/SINHW) + 1))]"
  */
-*_r = xx0;
-*_partial_i_f = fdD0;
+const double tmp_0 = (1.0/(SINHW));
+const double tmp_1 = tmp_0*xx0;
+*_r = AMPL*(exp(tmp_1) - exp(-tmp_1))/(exp(tmp_0) - exp(-tmp_0));
+*_partial_i_f = SINHW*fdD0*(exp(2*tmp_0) - 1)*exp(tmp_0*(xx0 - 1))/(AMPL*(exp(2*tmp_1) + 1));
 
 } // END contraction_term function

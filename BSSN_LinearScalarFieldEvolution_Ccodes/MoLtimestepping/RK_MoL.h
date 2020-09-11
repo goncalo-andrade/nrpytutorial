@@ -3,7 +3,8 @@
 
 Ricci_eval(&rfmstruct, &params, y_n_gfs, auxevol_gfs);
 rhs_eval(&rfmstruct, &params, auxevol_gfs, y_n_gfs, k_odd_gfs)
-;apply_bcs_sommerfeld(&params, xx, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, y_n_gfs, k_odd_gfs);
+;fields_rhs_eval(&rfmstruct, &params, y_n_gfs, k_odd_gfs);
+apply_bcs_sommerfeld(&params, xx, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, y_n_gfs, k_odd_gfs);
 
 LOOP_ALL_GFS_GPS(i) {
   y_nplus1_running_total_gfs[i] = k_odd_gfs[i]*dt*(1.0/6.0);
@@ -18,7 +19,8 @@ enforce_detgammabar_constraint(&rfmstruct, &params, k_odd_gfs);
 
 Ricci_eval(&rfmstruct, &params, k_odd_gfs, auxevol_gfs);
 rhs_eval(&rfmstruct, &params, auxevol_gfs, k_odd_gfs, k_even_gfs)
-;apply_bcs_sommerfeld(&params, xx, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, k_odd_gfs, k_even_gfs);
+;fields_rhs_eval(&rfmstruct, &params, k_odd_gfs, k_even_gfs);
+apply_bcs_sommerfeld(&params, xx, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, k_odd_gfs, k_even_gfs);
 
 LOOP_ALL_GFS_GPS(i) {
   y_nplus1_running_total_gfs[i] = y_nplus1_running_total_gfs[i] + k_even_gfs[i]*dt*(1.0/3.0);
@@ -33,7 +35,8 @@ enforce_detgammabar_constraint(&rfmstruct, &params, k_even_gfs);
 
 Ricci_eval(&rfmstruct, &params, k_even_gfs, auxevol_gfs);
 rhs_eval(&rfmstruct, &params, auxevol_gfs, k_even_gfs, k_odd_gfs)
-;apply_bcs_sommerfeld(&params, xx, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, k_even_gfs, k_odd_gfs);
+;fields_rhs_eval(&rfmstruct, &params, k_even_gfs, k_odd_gfs);
+apply_bcs_sommerfeld(&params, xx, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, k_even_gfs, k_odd_gfs);
 
 LOOP_ALL_GFS_GPS(i) {
   y_nplus1_running_total_gfs[i] = y_nplus1_running_total_gfs[i] + k_odd_gfs[i]*dt*(1.0/3.0);
@@ -48,7 +51,8 @@ enforce_detgammabar_constraint(&rfmstruct, &params, k_odd_gfs);
 
 Ricci_eval(&rfmstruct, &params, k_odd_gfs, auxevol_gfs);
 rhs_eval(&rfmstruct, &params, auxevol_gfs, k_odd_gfs, k_even_gfs)
-;apply_bcs_sommerfeld(&params, xx, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, k_odd_gfs, k_even_gfs);
+;fields_rhs_eval(&rfmstruct, &params, k_odd_gfs, k_even_gfs);
+apply_bcs_sommerfeld(&params, xx, &bcstruct, NUM_EVOL_GFS, evol_gf_parity, k_odd_gfs, k_even_gfs);
 
 LOOP_ALL_GFS_GPS(i) {
   y_n_gfs[i] = y_n_gfs[i] + y_nplus1_running_total_gfs[i] + k_even_gfs[i]*dt*(1.0/6.0);

@@ -13,14 +13,19 @@ REAL dsmin = 1e38; // Start with a crazy high value... close to the largest numb
                 REAL ds_dirn0, ds_dirn1, ds_dirn2;
                 /*
                  *  Original SymPy expressions:
-                 *  "[ds_dirn0 = dxx0,
-                 *    ds_dirn1 = dxx1*xx0,
-                 *    ds_dirn2 = dxx2*xx0*sin(xx1)]"
+                 *  "[ds_dirn0 = AMPL*dxx0*(exp(xx0/SINHW)/SINHW + exp(-xx0/SINHW)/SINHW)/(exp(1/SINHW) - exp(-1/SINHW)),
+                 *    ds_dirn1 = AMPL*dxx1*(exp(xx0/SINHW) - exp(-xx0/SINHW))/(exp(1/SINHW) - exp(-1/SINHW)),
+                 *    ds_dirn2 = AMPL*dxx2*(exp(xx0/SINHW) - exp(-xx0/SINHW))*sin(xx1)/(exp(1/SINHW) - exp(-1/SINHW))]"
                  */
                 {
-                   ds_dirn0 = dxx0;
-                   ds_dirn1 = dxx1*xx0;
-                   ds_dirn2 = dxx2*xx0*sin(xx1);
+                   const double tmp_0 = (1.0/(SINHW));
+                   const double tmp_2 = exp(tmp_0*xx0);
+                   const double tmp_3 = exp(-tmp_0*xx0);
+                   const double tmp_4 = AMPL/(exp(tmp_0) - exp(-tmp_0));
+                   const double tmp_5 = tmp_4*(tmp_2 - tmp_3);
+                   ds_dirn0 = dxx0*tmp_4*(tmp_0*tmp_2 + tmp_0*tmp_3);
+                   ds_dirn1 = dxx1*tmp_5;
+                   ds_dirn2 = dxx2*tmp_5*sin(xx1);
                 }
                 
                 #ifndef MIN
