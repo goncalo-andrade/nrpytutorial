@@ -1,10 +1,13 @@
-from pathlib import Path
+import numpy as np
 
+def make_sbatch_file(file_path, job_name, code_folder, output_folder_name, params, nthreads, mkdirs=True):
 
-def make_sbatch_file(file_path, job_name, code_folder, output_folder_name, params, nthreads):
-
-    exec_command = f'../exec {params["nr"]} {params["nth"]} {params["nph"]} {params["cfl"]}'
-    dir_name = f'{output_folder_name}_{params["nr"]}_{params["nth"]}_{params["nph"]}'
+    exec_command = f'../exec {params["nr"]} {params["nth"]} {params["nph"]} {params["cfl"]} {params["t_initial"]} {params["chi"]} {params["A"]} {params["r0"]} {params["w"]} {params["mu_s"]}'
+    dir_name = f'{output_folder_name}_{params["nr"]}_{params["nth"]}_{params["nph"]}_{params["chi"]}'
+    if mkdirs:
+        mkdir_line = f'mkdir output/{dir_name} ; cd output/{dir_name} ; mkdir checkpoint_data'
+    else:
+        mkdir_line = f'cd output/{dir_name}'
 
     with open(file_path, "w") as file:
         file.write(f'''#!/bin/bash
@@ -19,42 +22,31 @@ def make_sbatch_file(file_path, job_name, code_folder, output_folder_name, param
 #SBATCH --mem=32G
 
 RUNPATH=/home/goncaloa/{code_folder} ; cd $RUNPATH
-mkdir output/{dir_name} ; cd output/{dir_name} ; mkdir checkpoint_data
+{mkdir_line}
 export OMP_NUM_THREADS={nthreads}
 {exec_command}
-        ''')
+''')
 
 
-nrs = [300, 400]
-nths = [8]
-nphs = [16]
-cfl = 0.5
+def find_nr(horizon_pts, rmax, sinhw, M, chi):
 
-job_name = 'gaussian'
-code_folder = 'Gaussian/FD_Order8'
-output_folder_name = 'fields'
-nthreads = 24
+    a = M * chi
+    rp = M + np.sqrt(M**2 - a**2)
+    rh = rp / 4
 
-sbatch_folder = Path.cwd().parent / 'nrpytutorial' / \
-    'BSSN_LinearScalarFieldEvolution_Ccodes' / 'sbatch'
-if not sbatch_folder.exists():
-    sbatch_folder.mkdir()
+    nr = 0
+    n_horizon = 0
 
-count = 0
-for nr in nrs:
-    for nth in nths:
-        for nph in nphs:
+    while n_horizon < horizon_pts:
 
-            params = {}
-            params['nr'] = nr
-            params['nth'] = nth
-            params['nph'] = nph
-            params['cfl'] = cfl
+        n_horizon = 0
+        nr = nr + 10
 
-            file_path = sbatch_folder / f'job_{count}.sbatch'
-            make_sbatch_file(file_path, job_name, code_folder, output_folder_name, params, nthreads)
+        i = np.arange(nr)
+        xx0s = (i + 1 / 2) / nr
+        rs = rmax * np.sinh(xx0s / sinhw) / np.sinh(1 / sinhw)
 
-            count += 1
+        n_horizon = rs[np.where(rs < rh)].size
 
-for i in range(count):
-    print(f'sbatch sbatch/job_{i}.sbatch')
+    return nr
+

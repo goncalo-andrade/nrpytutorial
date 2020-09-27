@@ -99,11 +99,6 @@
 void print_all_gfs(const paramstruct *restrict params, const REAL *restrict gfs, const REAL time) {
 #include "set_Cparameters.h"
 
-    // Write the new starting time to free_parameters.h
-    FILE *freeparams = fopen("../../free_parameters.h", "a");
-    fprintf(freeparams, "t_initial = %.5f;\n", time);
-    fclose(freeparams);
-
     #pragma omp parallel for
     for (int which_gf = 0; which_gf < NUM_EVOL_GFS; which_gf++) {
 
@@ -186,7 +181,7 @@ int main(int argc, const char *argv[]) {
     REAL t_initial = 0;
 
     // Read command-line input, error out if nonconformant
-    // Expected arguments: Nxx0 Nxx1 Nxx2 [CFL_FACTOR] [t_initial] [A] [r0] [w] [mu_s]
+    // Expected arguments: Nxx0 Nxx1 Nxx2 [CFL_FACTOR] [t_initial] [chi] [A] [r0] [w] [mu_s]
     // Arguments in brackets are optional
 
     if (argc < 4 || atoi(argv[1]) < NGHOSTS || atoi(argv[2]) < NGHOSTS || atoi(argv[3]) < 2 /* FIXME; allow for axisymmetric sims */)
@@ -217,15 +212,15 @@ int main(int argc, const char *argv[]) {
             fprintf(stderr, "         However, Nx2 was set to %d>2, which implies a non-axisymmetric simulation\n", atoi(argv[3]));
         }
         // Check initial time
-        REAL t_initial = strtod(argv[5], NULL);
+        t_initial = strtod(argv[5], NULL);
         if (t_initial < 0) {
-            fprintf(stderr, "ERROR: Initial simulation time was chosen to be %f < 0.\n"t_init);
+            fprintf(stderr, "ERROR: Initial simulation time was chosen to be %f < 0.\n", t_initial);
             fprintf(stderr, "       Please select a time that is greater than or equal to 0.\n");
             exit(1);
         }
         fprintf(stderr, "WARNING: No scalar field parameters provided. Defaults will be used instead.\n");
     }
-    if (argc == 10) {
+    if (argc == 11) {
         // Check CFL factor
         CFL_FACTOR = strtod(argv[4], NULL);
         if (CFL_FACTOR > 0.5 && atoi(argv[3]) != 2)
@@ -237,44 +232,51 @@ int main(int argc, const char *argv[]) {
         // Check initial time
         t_initial = strtod(argv[5], NULL);
         if (t_initial < 0) {
-            fprintf(stderr, "ERROR: Initial simulation time was chosen to be %f < 0.\n"t_init);
+            fprintf(stderr, "ERROR: Initial simulation time was chosen to be %f < 0.\n", t_initial);
             fprintf(stderr, "       Please select a time that is greater than or equal to 0.\n");
             exit(1);
         }
+        // Check if 0 < chi <= 0.99
+        REAL chi = strtod(argv[6], NULL);
+        if (chi < 0 || chi > 0.99) {
+            fprintf(stderr, "ERROR: Black hole spin is set to %.2f. It must obey 0 < chi <= 0.99.\n", chi);
+            exit(1);
+        }
         // Check if A is non-zero
-        REAL A = strtod(argv[6], NULL);
+        REAL A = strtod(argv[7], NULL);
         if (A == 0) {
             fprintf(stderr, "ERROR: Scalar field amplitude must not be zero.\n");
             exit(1);
         }
         // Check if r0 is non-negative
-        REAL r0 = strtod(argv[7], NULL);
+        REAL r0 = strtod(argv[8], NULL);
         if (r0 < 0) {
             fprintf(stderr, "WARNING: R0 was set to %e, which is < 0. This must be a non-negative number.\n", r0);
             fprintf(stderr, "         The symmetric of the number you provided will be used instead.\n");
             r0 = -r0;
         }
         // Check if w is non-zero
-        REAL w = strtod(argv[8], NULL);
+        REAL w = strtod(argv[9], NULL);
         if (w == 0) {
             fprintf(stderr, "ERROR: Scalar field gaussian width must not be zero.\n");
             exit(1);
         }
         // Check if mu_s is non-negative
-        REAL mu_s = strtod(argv[9], NULL);
+        REAL mu_s = strtod(argv[10], NULL);
         if (mu_s < 0) {
             fprintf(stderr, "ERROR: mu_s was set to %e, which is < 0. This must be a non-negative number.\n", mu_s);
             exit(1);
         }
 
         // Set the scalar field parameters
+        params.chi = chi;
         params.A = A;
         params.r0 = r0;
         params.w = w;
         params.mu_s = mu_s;
     }
     // If 5 < argc < 9, not enough parameters provided
-    if (argc > 6 && argc < 10) {
+    if (argc > 6 && argc < 11) {
         fprintf(stderr, "ERROR: not enough scalar field parameters provided.\n");
         fprintf(stderr, "       Expected argument format is Nxx0 Nxx1 Nxx2 [CFL_FACTOR] [A] [r0] [w] [mu_s]\n.");
         exit(1);
