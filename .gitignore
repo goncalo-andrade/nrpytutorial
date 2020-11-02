@@ -5,3 +5,4 @@ htmlcov/
 ScalarFieldStaticBackground/*/
 .ipynb_checkpoints/
 .vscode/
+*Ccodes/
