@@ -112,17 +112,17 @@ def ScalarFieldSourceTerms():
     
     SD = ixp.zerorank1()
     for i in range(DIM):
-        SD[i] += - Pi * Phi_dD[i]
+        SD[i] += Pi * Phi_dD[i]
 
     S = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):
             S += gammaUU[i][j] * SDD[i][j]
 
-    rho = -sp.Rational(1,2) * (Pi**2 + mu_s**2 * Phi**2)
+    rho = sp.Rational(1,2) * (Pi**2 + mu_s**2 * Phi**2)
     for k in range(DIM):
         for l in range(DIM):
-            rho += -sp.Rational(1,2) * gammaUU[k][l] * Phi_dD[k] * Phi_dD[l]
+            rho += sp.Rational(1,2) * gammaUU[k][l] * Phi_dD[k] * Phi_dD[l]
 
     # Declare global variables for source terms
     global sourceterm_trK_rhs, sourceterm_Lambdabar_rhsU, sourceterm_lambda_rhsU, sourceterm_a_rhsDD

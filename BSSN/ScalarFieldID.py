@@ -55,7 +55,7 @@ def ScalarFieldID_Schwarzschild(psi0, ID_Type="Gaussian"):
     global SphPhi, SphPi
 
     # Declare a global varible for the correction to the conformal factor
-    global delta
+    global psi
 
     # Call reference metric if it hasn't been called already
     if not rfm.have_already_called_reference_metric_function:
@@ -85,14 +85,14 @@ def ScalarFieldID_Schwarzschild(psi0, ID_Type="Gaussian"):
         u22 = -(A**2 * w**2) / (80 * r**2) * sp.sqrt(sp.Rational(3, 10)) / sp.sqrt(sp.pi) * sp.exp(-2 * (r - r0)**2 / w**2) * (4 * (r**4 + r**3 * r0 + r**2 * r0**2 + r * r0**3 + r0**4) + w**2 * (4 * r**2 + 7 * r * r0 + 9 * r0**2) + 2 * w**4) + A**2 * sp.sqrt(sp.Rational(3, 5)) * (w * (-16 * r**5 + 16 * r0**5 + 40 * r0**3 * w**2 + 15 * r0 * w**4)) / (320 * r**2) * (sp.erf(sp.sqrt(2) * (r - r0) / w) - 1) + A**2 * sp.sqrt(sp.Rational(3, 5)) * (w * r0 * (16 * r0**4 + 40 * r0**2 * w**2 + 15 * w**4)) / (320 * r**2) * (sp.erf(sp.sqrt(2) * r0 / w) + 1) + A**2 * sp.sqrt(sp.Rational(6, 5)) / sp.sqrt(sp.pi) * sp.exp(-2 * r0**2 / w**2) * (2 * w**2 * (4 * r0**4 + 9 * r0**2 * w**2 + 2 * w**4)) / (320 * r**2)
         u20 = - sp.sqrt(sp.Rational(2, 3)) * u22
         u00 = A**2 * w / 16 * (- 2 * w * (2 * r0**2 + w**2) * sp.exp(-2 * (r - r0)**2 / w**2) / sp.sqrt(sp.pi) - sp.sqrt(2) * (4 * (r - r0) * r0**2 + (r - 3 * r0) * w**2) * (sp.erf(sp.sqrt(2) * (r - r0) / w) - 1))
-        psi1 += u22 / r * sp.simplify(sp.Ynm(2, 2, th, ph).expand(func=True) + sp.Ynm(2, -2, th, ph).expand(func=True)) 
-        psi1 += u20 / r * sp.Ynm(2, 0, th, ph).expand(func=True) 
+        psi1 += u22 / r * sp.simplify(sp.Ynm(2, 2, th, ph).expand(func=True) + sp.Ynm(2, -2, th, ph).expand(func=True))
+        psi1 += u20 / r * sp.Ynm(2, 0, th, ph).expand(func=True)
         psi1 += u00 / r * sp.Ynm(0, 0, th, ph).expand(func=True)
 
     # Correct the conformal factor
     psi = psi0 + psi1
     # Correction for the cf in BSSN
-    delta = 1 + psi1 / psi0
+    # delta = 1 + psi1 / psi0
 
     # Set the Phi initial data to zero
     SphPhi = 0
@@ -103,7 +103,8 @@ def ScalarFieldID_Schwarzschild(psi0, ID_Type="Gaussian"):
         SphPhi, coords, rfm.xxSph)
     SphPi = sympify_integers__replace_rthph_or_Cartxyz(
         SphPi, coords, rfm.xxSph)
-    delta = sympify_integers__replace_rthph_or_Cartxyz(delta, coords, rfm.xxSph)
+    psi = sympify_integers__replace_rthph_or_Cartxyz(psi, coords, rfm.xxSph)
+    # delta = sympify_integers__replace_rthph_or_Cartxyz(delta, coords, rfm.xxSph)
 
     import BSSN.ScalarField_ID_function_string as sfIDf
     global returnfunction
