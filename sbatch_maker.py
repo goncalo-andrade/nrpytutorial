@@ -14,8 +14,8 @@ def make_sbatch_file(file_path, job_name, code_folder, output_folder_name, param
     with open(file_path, "w") as file:
         file.write(f'''#!/bin/bash
 #SBATCH --job-name={job_name}
-#SBATCH --output=/home/goncaloa/{code_folder}/output/out/{job_name}%j.out
-#SBATCH --error=/home/goncaloa/{code_folder}/output/err/{job_name}%j.err
+#SBATCH --output=/home/goncaloa/{code_folder}/output/out/{job_name}_%j.out
+#SBATCH --error=/home/goncaloa/{code_folder}/output/err/{job_name}_%j.err
 #SBATCH --nodes=1
 #SBATCH --ntasks={nthreads}
 #SBATCH --mail-user=goncalo.j.c.andrade@tecnico.ulisboa.pt
@@ -354,11 +354,11 @@ if __name__ == "__main__":
     # Best GaussianSpherical config
     M = 1
     chi = 0.95
-    rmax = 250
-    nth = 8
-    nph = 16
+    rmax = 1000
+    nth = 16
+    nph = 32
     horizon_pts = 15
-    width = 0.5
+    width = 10
 
 #     best_nr, best_A, best_B, best_sig, best_dist, best_hpts, best_tp = find_gaussianspherical_params(
 #         nth, nph, rmax, M, chi, horizon_pts, width)
